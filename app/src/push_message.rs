@@ -31,13 +31,19 @@ pub async fn push_message(
     {
         Ok(response) => {
             if response.status().is_success() {
-                let body = response.text().await.unwrap();
+                let body = response
+                    .text()
+                    .await
+                    .expect("Failed to parse response body");
                 Ok(body)
             } else {
                 let error_message = format!(
                     "Request failed with status code {}: {}",
                     response.status(),
-                    response.text().await.unwrap()
+                    response
+                        .text()
+                        .await
+                        .expect("Failed to parse response body")
                 );
                 Err(error_message)
             }
