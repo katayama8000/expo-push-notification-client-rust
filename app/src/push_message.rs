@@ -3,12 +3,7 @@ use serde_json::json;
 
 type PushResult = Result<String, String>;
 
-pub async fn push_message(
-    expo_push_token: &str,
-    title: &str,
-    body: &str,
-    data: &str,
-) -> PushResult {
+pub async fn push_message(expo_push_token: &str, title: &str, body: &str) -> PushResult {
     let url = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -19,7 +14,6 @@ pub async fn push_message(
         "to": expo_push_token,
         "title": title,
         "body": body,
-        "data": data,
     });
 
     match client
