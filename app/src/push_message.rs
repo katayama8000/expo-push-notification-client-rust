@@ -1,9 +1,11 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde_json::json;
 
-type PushResult = Result<String, String>;
-
-pub async fn push_message(expo_push_token: &str, title: &str, body: &str) -> PushResult {
+pub async fn push_message(
+    expo_push_token: &str,
+    title: &str,
+    body: &str,
+) -> Result<String, String> {
     let url = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
