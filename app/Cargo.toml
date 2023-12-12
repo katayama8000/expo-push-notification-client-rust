@@ -6,3 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+serde = { version = "1.0.193", features = ["derive"] }
+reqwest = { version = "0.11", features = ["json"] }
+serde_json = "1.0.108"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0.75"
+tower-http = { version = "0.5.0", features = ["full"] }
