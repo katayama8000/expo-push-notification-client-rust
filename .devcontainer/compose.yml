@@ -1,0 +1,10 @@
+services:
+  expo-server-sdk-rust:
+    build:
+      context: .
+      dockerfile: dockerfile
+    restart: always
+    tty: true
+    volumes:
+      - ../:/workspace
+    working_dir: /workspace
