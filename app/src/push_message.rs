@@ -12,6 +12,22 @@ pub async fn push_message(
 
     let client = reqwest::Client::new();
 
+    if !expo_push_token.starts_with("ExponentPushToken[") {
+        let error_message = format!("Invalid expo push token: {}", expo_push_token);
+        return Err(error_message);
+    }
+
+    // title body の形式チェック
+    if title.is_empty() {
+        let error_message = format!("Title is empty");
+        return Err(error_message);
+    }
+
+    if body.is_empty() {
+        let error_message = format!("Body is empty");
+        return Err(error_message);
+    }
+
     let payload = json!({
         "to": expo_push_token,
         "title": title,
@@ -48,5 +64,31 @@ pub async fn push_message(
             let error_message = format!("Failed to send request: {:?}", err);
             Err(error_message)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn invalid_expo_push_token() {
+        let result = push_message("ExponentPushTokenxxxxxxxxxxxxxxxxxxxxxx", "Hello", "World");
+        assert_eq!(
+            result.await.unwrap_err(),
+            "Invalid expo push token: ExponentPushTokenxxxxxxxxxxxxxxxxxxxxxx"
+        );
+    }
+
+    #[tokio::test]
+    async fn empty_title() {
+        let result = push_message("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", "", "World");
+        assert_eq!(result.await.unwrap_err(), "Title is empty");
+    }
+
+    #[tokio::test]
+    async fn empty_body() {
+        let result = push_message("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", "Hello", "");
+        assert_eq!(result.await.unwrap_err(), "Body is empty");
     }
 }
