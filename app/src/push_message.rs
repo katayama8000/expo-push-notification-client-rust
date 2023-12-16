@@ -17,7 +17,6 @@ pub async fn push_message(
         return Err(error_message);
     }
 
-    // title body の形式チェック
     if title.is_empty() {
         let error_message = format!("Title is empty");
         return Err(error_message);
@@ -70,6 +69,7 @@ pub async fn push_message(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mockito;
 
     #[tokio::test]
     async fn invalid_expo_push_token() {
@@ -90,5 +90,24 @@ mod tests {
     async fn empty_body() {
         let result = push_message("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", "Hello", "");
         assert_eq!(result.await.unwrap_err(), "Body is empty");
+    }
+
+    #[tokio::test]
+    async fn valid() {
+        let mut server = mockito::Server::new();
+        server
+            .mock("POST", "https://exp.host/--/api/v2/push/send")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .match_body(mockito::Matcher::JsonString(
+                r#"{"to":"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]","title":"Hello","body":"World"}"#
+                    .to_string(),
+            )).create();
+        let result = push_message(
+            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            "Hello",
+            "World",
+        );
+        assert_eq!(result.await.is_ok(), true);
     }
 }
