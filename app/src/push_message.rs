@@ -2,7 +2,7 @@ use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde_json::json;
 
 pub struct Body {
-    expo_push_token: String,
+    expo_push_token: Vec<String>,
     title: String,
     body: String,
 }
@@ -14,18 +14,20 @@ pub async fn push_message(body: Body) -> Result<String, String> {
 
     let client = reqwest::Client::new();
 
-    if !body.expo_push_token.starts_with("ExponentPushToken[") {
-        let error_message = format!("Invalid expo push token: {}", body.expo_push_token);
-        return Err(error_message);
+    for token in &body.expo_push_token {
+        if !token.starts_with("ExponentPushToken[") {
+            let error_message = format!("Invalid expo push token: {}", token);
+            return Err(error_message);
+        }
     }
 
     if body.title.is_empty() {
-        let error_message = format!("Title is empty");
+        let error_message = "Title is empty".to_string();
         return Err(error_message);
     }
 
     if body.body.is_empty() {
-        let error_message = format!("Body is empty");
+        let error_message = "Body is empty".to_string();
         return Err(error_message);
     }
 
@@ -56,7 +58,7 @@ pub async fn push_message(body: Body) -> Result<String, String> {
                     response
                         .text()
                         .await
-                        .expect("Failed to parse response body")
+                        .unwrap_or_else(|_| "Failed to parse response body".to_string())
                 );
                 Err(error_message)
             }
@@ -76,43 +78,41 @@ mod tests {
     #[tokio::test]
     async fn invalid_expo_push_token() {
         let body = Body {
-            expo_push_token: "invalid".to_string(),
+            expo_push_token: vec![String::from("invalid")],
             title: "Hello".to_string(),
             body: "World".to_string(),
         };
 
-        let result = push_message(body);
-        assert_eq!(
-            result.await.unwrap_err(),
-            "Invalid expo push token: invalid"
-        );
+        let result = push_message(body).await;
+        assert_eq!(result.unwrap_err(), "Invalid expo push token: invalid");
     }
 
     #[tokio::test]
     async fn empty_title() {
         let body = Body {
-            expo_push_token: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+            expo_push_token: vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             title: "".to_string(),
             body: "World".to_string(),
         };
-        let result = push_message(body);
-        assert_eq!(result.await.unwrap_err(), "Title is empty");
+        let result = push_message(body).await;
+        assert_eq!(result.unwrap_err(), "Title is empty");
     }
 
     #[tokio::test]
     async fn empty_body() {
         let body = Body {
-            expo_push_token: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+            expo_push_token: vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             title: "Hello".to_string(),
             body: "".to_string(),
         };
-        let result = push_message(body);
-        assert_eq!(result.await.unwrap_err(), "Body is empty");
+        let result = push_message(body).await;
+        assert_eq!(result.unwrap_err(), "Body is empty");
     }
+
     #[tokio::test]
     async fn valid() {
         let body = Body {
-            expo_push_token: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+            expo_push_token: vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             title: "Hello".to_string(),
             body: "World".to_string(),
         };
@@ -122,10 +122,11 @@ mod tests {
             .with_status(200)
             .with_header("content-type", "application/json")
             .match_body(mockito::Matcher::JsonString(
-                r#"{"to":"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]","title":"Hello","body":"World"}"#
+                r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],"title":"Hello","body":"World"}"#
                     .to_string(),
-            )).create();
+            ))
+            .create();
         let result = push_message(body).await;
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
     }
 }
