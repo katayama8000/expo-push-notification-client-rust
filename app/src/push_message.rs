@@ -23,9 +23,9 @@ pub struct ErrorResponse {
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum EnumError {
-    ARGSError(String),
+    InvalidArgument(String),
     ExpoError(ErrorResponse),
-    OtherError(String),
+    Others(String),
 }
 
 #[derive(Debug, Serialize)]
@@ -48,7 +48,7 @@ pub async fn push_message(
 
     for token in expo_push_tokens {
         if !token.starts_with("ExponentPushToken[") {
-            return Err(EnumError::ARGSError(format!(
+            return Err(EnumError::InvalidArgument(format!(
                 "Invalid expo push token: {}",
                 token
             )));
@@ -56,11 +56,11 @@ pub async fn push_message(
     }
 
     if title.is_empty() {
-        return Err(EnumError::ARGSError("Title is empty".to_string()));
+        return Err(EnumError::InvalidArgument("Title is empty".to_string()));
     }
 
     if body.is_empty() {
-        return Err(EnumError::ARGSError("Body is empty".to_string()));
+        return Err(EnumError::InvalidArgument("Body is empty".to_string()));
     }
 
     let payload = PushPayload {
@@ -79,18 +79,18 @@ pub async fn push_message(
         Ok(response) => {
             if response.status().is_success() {
                 let body = response.json::<ApiResponse>().await.map_err(|err| {
-                    EnumError::OtherError(format!("Failed to parse response body: {:?}", err))
+                    EnumError::Others(format!("Failed to parse response body: {:?}", err))
                 })?;
                 Ok(body)
             } else {
                 Err(EnumError::ExpoError(
                     response.json::<ErrorResponse>().await.map_err(|err| {
-                        EnumError::OtherError(format!("Failed to parse response body: {:?}", err))
+                        EnumError::Others(format!("Failed to parse response body: {:?}", err))
                     })?,
                 ))
             }
         }
-        Err(err) => Err(EnumError::OtherError(format!(
+        Err(err) => Err(EnumError::Others(format!(
             "Failed to send request: {:?}",
             err
         ))),
@@ -107,7 +107,7 @@ mod tests {
         let result = push_message(&["invalid_token"], "Hello", "World").await;
         assert_eq!(
             result.unwrap_err(),
-            EnumError::ARGSError("Invalid expo push token: invalid_token".to_string())
+            EnumError::InvalidArgument("Invalid expo push token: invalid_token".to_string())
         );
     }
 
@@ -117,7 +117,7 @@ mod tests {
             push_message(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "", "World").await;
         assert_eq!(
             result.unwrap_err(),
-            EnumError::ARGSError("Title is empty".to_string())
+            EnumError::InvalidArgument("Title is empty".to_string())
         );
     }
 
@@ -127,7 +127,7 @@ mod tests {
             push_message(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "Hello", "").await;
         assert_eq!(
             result.unwrap_err(),
-            EnumError::ARGSError("Body is empty".to_string())
+            EnumError::InvalidArgument("Body is empty".to_string())
         );
     }
 
