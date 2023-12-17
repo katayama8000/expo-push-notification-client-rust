@@ -1,14 +1,14 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde_json::json;
 
-pub async fn get_receipts(ids: Vec<String>) -> Result<String, String> {
+pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
     let url = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
     let client = reqwest::Client::new();
 
-    for id in &ids {
+    for id in ids {
         if id.is_empty() {
             let error_message = format!("id is empty");
             return Err(error_message);
@@ -65,8 +65,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_receipts_empty_id() {
-        let ids = vec!["".to_string()];
-        let result = get_receipts(ids).await;
+        let ids = [""];
+        let result = get_receipts(&ids).await;
         assert_eq!(result, Err("id is empty".to_string()));
     }
 }
