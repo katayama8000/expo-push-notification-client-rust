@@ -18,7 +18,7 @@ pub async fn push_message(
     title: &str,
     body: &str,
 ) -> Result<ApiResponse, String> {
-    let url = "https://exp.host/--/api/v2/push/send";
+    const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
@@ -48,7 +48,7 @@ pub async fn push_message(
     });
 
     match client
-        .post(url)
+        .post(URL)
         .headers(headers)
         .json::<Value>(&payload)
         .send()
@@ -86,7 +86,7 @@ mod tests {
     use mockito;
 
     #[tokio::test]
-    async fn invalid_expo_push_token() {
+    async fn test_invalid_expo_push_token() {
         let result = push_message(&["invalid_token"], "Hello", "World");
         assert_eq!(
             result.await.unwrap_err(),
@@ -95,19 +95,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn empty_title() {
+    async fn test_empty_title() {
         let result = push_message(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "", "World");
         assert_eq!(result.await.unwrap_err(), "Title is empty");
     }
 
     #[tokio::test]
-    async fn empty_body() {
+    async fn test_empty_body() {
         let result = push_message(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "Hello", "");
         assert_eq!(result.await.unwrap_err(), "Body is empty");
     }
 
     #[tokio::test]
-    async fn valid() {
+    async fn test_valid_post() {
         let mut server = mockito::Server::new();
         server
             .mock("POST", "https://exp.host/--/api/v2/push/send")
@@ -123,5 +123,11 @@ mod tests {
             "World",
         );
         assert_eq!(result.await.is_ok(), true);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_invalid_post() {
+        todo!("test invalid post")
     }
 }

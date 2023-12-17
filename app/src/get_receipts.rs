@@ -2,7 +2,7 @@ use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde_json::json;
 
 pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
-    let url = "https://exp.host/--/api/v2/push/getReceipts";
+    const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
@@ -20,7 +20,7 @@ pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
     });
 
     match client
-        .post(url)
+        .post(URL)
         .headers(headers)
         .json(&payload)
         .send()
