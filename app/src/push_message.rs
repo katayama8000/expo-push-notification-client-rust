@@ -2,7 +2,7 @@ use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde_json::json;
 
 pub async fn push_message(
-    expo_push_token: &str,
+    expo_push_token: Vec<String>,
     title: &str,
     body: &str,
 ) -> Result<String, String> {
@@ -12,9 +12,11 @@ pub async fn push_message(
 
     let client = reqwest::Client::new();
 
-    if !expo_push_token.starts_with("ExponentPushToken[") {
-        let error_message = format!("Invalid expo push token: {}", expo_push_token);
-        return Err(error_message);
+    for token in &expo_push_token {
+        if !token.starts_with("ExponentPushToken[") {
+            let error_message = format!("Invalid expo push token: {}", token);
+            return Err(error_message);
+        }
     }
 
     if title.is_empty() {
@@ -73,22 +75,30 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_expo_push_token() {
-        let result = push_message("ExponentPushTokenxxxxxxxxxxxxxxxxxxxxxx", "Hello", "World");
+        let result = push_message(vec![String::from("invalid_token")], "Hello", "World");
         assert_eq!(
             result.await.unwrap_err(),
-            "Invalid expo push token: ExponentPushTokenxxxxxxxxxxxxxxxxxxxxxx"
+            "Invalid expo push token: invalid_token"
         );
     }
 
     #[tokio::test]
     async fn empty_title() {
-        let result = push_message("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", "", "World");
+        let result = push_message(
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
+            "",
+            "World",
+        );
         assert_eq!(result.await.unwrap_err(), "Title is empty");
     }
 
     #[tokio::test]
     async fn empty_body() {
-        let result = push_message("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", "Hello", "");
+        let result = push_message(
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
+            "Hello",
+            "",
+        );
         assert_eq!(result.await.unwrap_err(), "Body is empty");
     }
 
@@ -104,7 +114,7 @@ mod tests {
                     .to_string(),
             )).create();
         let result = push_message(
-            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "Hello",
             "World",
         );
