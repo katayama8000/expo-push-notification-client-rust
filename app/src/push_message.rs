@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 
 #[derive(Debug, Deserialize)]
 pub struct ApiResponse {
+    #[serde(default)]
     pub data: Vec<PushTicket>,
 }
 
@@ -13,11 +14,25 @@ pub struct PushTicket {
     pub id: String,
 }
 
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct ErrorResponse {
+    pub status: String,
+    pub message: String,
+    pub details: Value,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub enum EnumError {
+    ARGSError(String),
+    ExpoError(ErrorResponse),
+    OtherError(String),
+}
+
 pub async fn push_message(
     expo_push_token: &[&str],
     title: &str,
     body: &str,
-) -> Result<ApiResponse, String> {
+) -> Result<ApiResponse, EnumError> {
     const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -27,18 +42,18 @@ pub async fn push_message(
     for token in expo_push_token {
         if !token.starts_with("ExponentPushToken[") {
             let error_message = format!("Invalid expo push token: {}", token);
-            return Err(error_message);
+            return Err(EnumError::ARGSError(error_message));
         }
     }
 
     if title.is_empty() {
         let error_message = format!("Title is empty");
-        return Err(error_message);
+        return Err(EnumError::ARGSError(error_message));
     }
 
     if body.is_empty() {
         let error_message = format!("Body is empty");
-        return Err(error_message);
+        return Err(EnumError::ARGSError(error_message));
     }
 
     let payload = json!({
@@ -56,26 +71,21 @@ pub async fn push_message(
     {
         Ok(response) => {
             if response.status().is_success() {
-                let body = response
-                    .json::<ApiResponse>()
-                    .await
-                    .expect("Failed to parse response body");
+                // エラーの中身を確認
+                let body = response.json::<ApiResponse>().await.unwrap();
                 Ok(body)
             } else {
-                let error_message = format!(
-                    "Request failed with status code {}: {}",
-                    response.status(),
+                Err(EnumError::ExpoError(
                     response
-                        .text()
+                        .json::<ErrorResponse>()
                         .await
-                        .expect("Failed to parse response body")
-                );
-                Err(error_message)
+                        .expect("Failed to parse response body"),
+                ))
             }
         }
         Err(err) => {
             let error_message = format!("Failed to send request: {:?}", err);
-            Err(error_message)
+            Err(EnumError::OtherError(error_message.to_string()))
         }
     }
 }
@@ -90,20 +100,26 @@ mod tests {
         let result = push_message(&["invalid_token"], "Hello", "World");
         assert_eq!(
             result.await.unwrap_err(),
-            "Invalid expo push token: invalid_token"
+            EnumError::ARGSError("Invalid expo push token: invalid_token".to_string())
         );
     }
 
     #[tokio::test]
     async fn test_empty_title() {
         let result = push_message(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "", "World");
-        assert_eq!(result.await.unwrap_err(), "Title is empty");
+        assert_eq!(
+            result.await.unwrap_err(),
+            EnumError::ARGSError("Title is empty".to_string())
+        );
     }
 
     #[tokio::test]
     async fn test_empty_body() {
         let result = push_message(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "Hello", "");
-        assert_eq!(result.await.unwrap_err(), "Body is empty");
+        assert_eq!(
+            result.await.unwrap_err(),
+            EnumError::ARGSError("Body is empty".to_string())
+        );
     }
 
     #[tokio::test]
