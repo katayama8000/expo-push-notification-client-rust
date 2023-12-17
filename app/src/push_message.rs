@@ -24,8 +24,8 @@ pub struct ErrorResponse {
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum Error {
     InvalidArgument(String),
-    ExpoError(ErrorResponse),
-    DeserializeError(String), // 新しいエラー型を追加
+    ExpoErr(ErrorResponse),
+    DeserializeErr(String), // 新しいエラー型を追加
     Others(String),
 }
 
@@ -80,16 +80,16 @@ pub async fn push_message(
         Ok(response) => {
             if response.status().is_success() {
                 let body = response.json::<ApiResponse>().await.map_err(|err| {
-                    Error::DeserializeError(format!(
+                    Error::DeserializeErr(format!(
                         "Failed to parse response body as ApiResponse: {:?}",
                         err
                     ))
                 })?;
                 Ok(body)
             } else {
-                Err(Error::ExpoError(
+                Err(Error::ExpoErr(
                     response.json::<ErrorResponse>().await.map_err(|err| {
-                        Error::DeserializeError(format!(
+                        Error::DeserializeErr(format!(
                             "Failed to parse response body as ErrorResponse: {:?}",
                             err
                         ))

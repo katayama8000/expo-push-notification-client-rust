@@ -10,8 +10,7 @@ pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
 
     for id in ids {
         if id.is_empty() {
-            let error_message = format!("id is empty");
-            return Err(error_message);
+            return Err("id is empty".to_string());
         }
     }
 
