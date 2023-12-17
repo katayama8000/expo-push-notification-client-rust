@@ -1,11 +1,23 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde_json::json;
+use serde::Deserialize;
+use serde_json::{json, Value};
+
+#[derive(Debug, Deserialize)]
+pub struct ApiResponse {
+    pub data: Vec<PushTicket>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PushTicket {
+    pub status: String,
+    pub id: String,
+}
 
 pub async fn push_message(
     expo_push_token: &[&str],
     title: &str,
     body: &str,
-) -> Result<String, String> {
+) -> Result<ApiResponse, String> {
     let url = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -38,14 +50,14 @@ pub async fn push_message(
     match client
         .post(url)
         .headers(headers)
-        .json(&payload)
+        .json::<Value>(&payload)
         .send()
         .await
     {
         Ok(response) => {
             if response.status().is_success() {
                 let body = response
-                    .text()
+                    .json::<ApiResponse>()
                     .await
                     .expect("Failed to parse response body");
                 Ok(body)
