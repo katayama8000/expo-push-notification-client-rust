@@ -25,6 +25,7 @@ pub struct ErrorResponse {
 pub enum EnumError {
     InvalidArgument(String),
     ExpoError(ErrorResponse),
+    DeserializeError(String), // 新しいエラー型を追加
     Others(String),
 }
 
@@ -79,13 +80,19 @@ pub async fn push_message(
         Ok(response) => {
             if response.status().is_success() {
                 let body = response.json::<ApiResponse>().await.map_err(|err| {
-                    EnumError::Others(format!("Failed to parse response body: {:?}", err))
+                    EnumError::DeserializeError(format!(
+                        "Failed to parse response body as ApiResponse: {:?}",
+                        err
+                    ))
                 })?;
                 Ok(body)
             } else {
                 Err(EnumError::ExpoError(
                     response.json::<ErrorResponse>().await.map_err(|err| {
-                        EnumError::Others(format!("Failed to parse response body: {:?}", err))
+                        EnumError::DeserializeError(format!(
+                            "Failed to parse response body as ErrorResponse: {:?}",
+                            err
+                        ))
                     })?,
                 ))
             }
