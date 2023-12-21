@@ -1,5 +1,6 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::error::CustomError;
 
@@ -19,12 +20,7 @@ pub struct PushSuccessTicket {
 pub struct PushErrorTicket {
     pub status: String,
     pub message: String,
-    pub details: Details,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct Details {
-    pub error: String,
+    pub details: Value,
 }
 
 #[derive(Debug, Serialize)]
@@ -44,7 +40,7 @@ struct PushResultItem {
     status: String,
     id: Option<String>,
     message: Option<String>,
-    details: Option<Details>,
+    details: Option<Value>,
 }
 
 pub async fn send_push_notification(
