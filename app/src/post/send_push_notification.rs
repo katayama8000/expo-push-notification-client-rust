@@ -149,6 +149,27 @@ pub async fn send_push_notification(
         return Err(CustomError::InvalidArgument("Body is empty".to_string()));
     }
 
+    if push_message.priority.is_some() {
+        let priority = push_message.priority.as_ref().unwrap();
+        if priority != "default" && priority != "normal" && priority != "high" {
+            return Err(CustomError::InvalidArgument(format!(
+                "Invalid priority: {}",
+                priority
+            )));
+        }
+    }
+
+    // sound can be null or default
+    if push_message.sound.is_some() {
+        let sound = push_message.sound.as_ref().unwrap();
+        if sound != "default" {
+            return Err(CustomError::InvalidArgument(format!(
+                "Invalid sound: {}",
+                sound
+            )));
+        }
+    }
+
     match client
         .post(URL)
         .headers(headers)
@@ -243,6 +264,36 @@ mod tests {
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Body is empty".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_invalid_priority() {
+        let expo_push_message = PushMessage::new(
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
+            "Hello".to_string(),
+            "World".to_string(),
+        )
+        .priority("invalid_priority".to_string());
+        let result = send_push_notification(expo_push_message).await;
+        assert_eq!(
+            result.unwrap_err(),
+            CustomError::InvalidArgument("Invalid priority: invalid_priority".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_invalid_sound() {
+        let expo_push_message = PushMessage::new(
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
+            "Hello".to_string(),
+            "World".to_string(),
+        )
+        .sound("invalid_sound".to_string());
+        let result = send_push_notification(expo_push_message).await;
+        assert_eq!(
+            result.unwrap_err(),
+            CustomError::InvalidArgument("Invalid sound: invalid_sound".to_string())
         );
     }
 
