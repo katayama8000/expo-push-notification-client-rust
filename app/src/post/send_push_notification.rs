@@ -24,10 +24,10 @@ pub struct PushErrorTicket {
 }
 
 #[derive(Debug, Serialize)]
-pub struct PushPayload<'a> {
-    to: &'a [&'a str],
-    title: &'a str,
-    body: &'a str,
+pub struct PushPayload {
+    to: Vec<String>,
+    title: String,
+    body: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,9 +44,9 @@ struct PushResultItem {
 }
 
 pub async fn send_push_notification(
-    expo_push_tokens: &[&str],
-    title: &str,
-    body: &str,
+    expo_push_tokens: Vec<String>,
+    title: String,
+    body: String,
 ) -> Result<Vec<PushTicket>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
@@ -54,7 +54,7 @@ pub async fn send_push_notification(
 
     let client = reqwest::Client::new();
 
-    for token in expo_push_tokens {
+    for token in expo_push_tokens.clone() {
         if !token.starts_with("ExponentPushToken[") {
             return Err(CustomError::InvalidArgument(format!(
                 "Invalid expo push token: {}",
@@ -134,7 +134,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_invalid_expo_push_token() {
-        let result = send_push_notification(&["invalid_token"], "Hello", "World").await;
+        let result = send_push_notification(
+            vec![String::from("invalid_token")],
+            "Hello".to_string(),
+            "World".to_string(),
+        )
+        .await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Invalid expo push token: invalid_token".to_string())
@@ -143,9 +148,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_title() {
-        let result =
-            send_push_notification(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "", "World")
-                .await;
+        let result = send_push_notification(
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
+            "".to_string(),
+            "World".to_string(),
+        )
+        .await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Title is empty".to_string())
@@ -154,9 +162,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_body() {
-        let result =
-            send_push_notification(&["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"], "Hello", "")
-                .await;
+        let result = send_push_notification(
+            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
+            "Hello".to_string(),
+            "".to_string(),
+        )
+        .await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Body is empty".to_string())
