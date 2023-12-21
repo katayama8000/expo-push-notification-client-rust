@@ -105,13 +105,13 @@ pub async fn send_push_notification(
                         if item.status == "error" {
                             PushTicket::Error(PushErrorTicket {
                                 status: item.status,
-                                message: item.message.unwrap_or_default(), // Use unwrap_or_default to provide a default value
-                                details: item.details.unwrap_or_default(), // Use unwrap_or_default to provide a default value
+                                message: item.message.expect("message is empty"),
+                                details: item.details.expect("details is empty"),
                             })
                         } else if item.status == "ok" {
                             PushTicket::Success(PushSuccessTicket {
                                 status: item.status,
-                                id: item.id.unwrap_or_default(), // Use unwrap_or_default to provide a default value
+                                id: item.id.expect("id is empty"),
                             })
                         } else {
                             unreachable!("Unknown status: {}", item.status)
