@@ -110,7 +110,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_get_receipts() {
-        todo!("need to mock the response")
+        todo!("test")
     }
 
     #[tokio::test]

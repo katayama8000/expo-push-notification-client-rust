@@ -159,7 +159,6 @@ pub async fn send_push_notification(
         }
     }
 
-    // sound can be null or default
     if push_message.sound.is_some() {
         let sound = push_message.sound.as_ref().unwrap();
         if sound != "default" {
@@ -306,6 +305,6 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_invalid_post() {
-        todo!("test invalid post")
+        todo!("test")
     }
 }
