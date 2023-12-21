@@ -23,13 +23,6 @@ pub struct PushErrorTicket {
     pub details: Value,
 }
 
-#[derive(Debug, Serialize)]
-pub struct PushPayload {
-    to: Vec<String>,
-    title: String,
-    body: String,
-}
-
 #[derive(Debug, Deserialize)]
 struct PushResult {
     data: Vec<PushResultItem>,
@@ -43,10 +36,95 @@ struct PushResultItem {
     details: Option<Value>,
 }
 
-pub async fn send_push_notification(
-    expo_push_tokens: Vec<String>,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PushMessage {
+    to: Vec<String>,
     title: String,
     body: String,
+    data: Option<serde_json::Value>,
+    ttl: Option<u64>,
+    expiration: Option<u64>,
+    priority: Option<String>,
+    subtitle: Option<String>,
+    sound: Option<String>,
+    badge: Option<u64>,
+    channel_id: Option<String>,
+    category_id: Option<String>,
+    mutable_content: Option<bool>,
+}
+
+impl PushMessage {
+    pub fn new(to: Vec<String>, title: String, body: String) -> Self {
+        PushMessage {
+            to,
+            title,
+            body,
+            data: None,
+            ttl: None,
+            expiration: None,
+            priority: None,
+            subtitle: None,
+            sound: None,
+            badge: None,
+            channel_id: None,
+            category_id: None,
+            mutable_content: None,
+        }
+    }
+
+    pub fn data(mut self, data: serde_json::Value) -> Self {
+        self.data = Some(data);
+        self
+    }
+
+    pub fn ttl(mut self, ttl: u64) -> Self {
+        self.ttl = Some(ttl);
+        self
+    }
+
+    pub fn expiration(mut self, expiration: u64) -> Self {
+        self.expiration = Some(expiration);
+        self
+    }
+
+    pub fn priority(mut self, priority: String) -> Self {
+        self.priority = Some(priority);
+        self
+    }
+
+    pub fn subtitle(mut self, subtitle: String) -> Self {
+        self.subtitle = Some(subtitle);
+        self
+    }
+
+    pub fn sound(mut self, sound: String) -> Self {
+        self.sound = Some(sound);
+        self
+    }
+
+    pub fn badge(mut self, badge: u64) -> Self {
+        self.badge = Some(badge);
+        self
+    }
+
+    pub fn channel_id(mut self, channel_id: String) -> Self {
+        self.channel_id = Some(channel_id);
+        self
+    }
+
+    pub fn category_id(mut self, category_id: String) -> Self {
+        self.category_id = Some(category_id);
+        self
+    }
+
+    pub fn mutable_content(mut self, mutable_content: bool) -> Self {
+        self.mutable_content = Some(mutable_content);
+        self
+    }
+}
+
+pub async fn send_push_notification(
+    push_message: PushMessage,
 ) -> Result<Vec<PushTicket>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
@@ -54,7 +132,7 @@ pub async fn send_push_notification(
 
     let client = reqwest::Client::new();
 
-    for token in expo_push_tokens.clone() {
+    for token in push_message.to.clone() {
         if !token.starts_with("ExponentPushToken[") {
             return Err(CustomError::InvalidArgument(format!(
                 "Invalid expo push token: {}",
@@ -63,24 +141,18 @@ pub async fn send_push_notification(
         }
     }
 
-    if title.is_empty() {
+    if push_message.title.is_empty() {
         return Err(CustomError::InvalidArgument("Title is empty".to_string()));
     }
 
-    if body.is_empty() {
+    if push_message.body.is_empty() {
         return Err(CustomError::InvalidArgument("Body is empty".to_string()));
     }
-
-    let payload = PushPayload {
-        to: expo_push_tokens,
-        title,
-        body,
-    };
 
     match client
         .post(URL)
         .headers(headers)
-        .json(&payload)
+        .json(&push_message)
         .send()
         .await
     {
@@ -134,12 +206,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_invalid_expo_push_token() {
-        let result = send_push_notification(
+        let expo_push_message = PushMessage::new(
             vec![String::from("invalid_token")],
             "Hello".to_string(),
             "World".to_string(),
-        )
-        .await;
+        );
+        let result = send_push_notification(expo_push_message).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Invalid expo push token: invalid_token".to_string())
@@ -148,12 +220,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_title() {
-        let result = send_push_notification(
+        let expo_push_message = PushMessage::new(
             vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "".to_string(),
             "World".to_string(),
-        )
-        .await;
+        );
+        let result = send_push_notification(expo_push_message).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Title is empty".to_string())
@@ -162,12 +234,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_body() {
-        let result = send_push_notification(
+        let expo_push_message = PushMessage::new(
             vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "Hello".to_string(),
             "".to_string(),
-        )
-        .await;
+        );
+        let result = send_push_notification(expo_push_message).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Body is empty".to_string())
