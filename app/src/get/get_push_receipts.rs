@@ -1,7 +1,14 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde_json::json;
 
-pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
+use crate::error::CustomError;
+
+#[derive(Debug, serde::Deserialize, PartialEq)]
+pub struct PushReceiptResponse {
+    pub data: serde_json::Value,
+    pub errors: Option<Vec<serde_json::Value>>,
+}
+pub async fn get_push_receipts(ids: &[&str]) -> Result<PushReceiptResponse, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -10,7 +17,7 @@ pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
 
     for id in ids {
         if id.is_empty() {
-            return Err("id is empty".to_string());
+            return Err(CustomError::InvalidArgument("id is empty".to_string()));
         }
     }
 
@@ -27,27 +34,19 @@ pub async fn get_receipts(ids: &[&str]) -> Result<String, String> {
     {
         Ok(response) => {
             if response.status().is_success() {
-                let body = response
-                    .text()
+                let result = response
+                    .json::<PushReceiptResponse>()
                     .await
                     .expect("Failed to parse response body");
-                Ok(body)
+                Ok(result)
             } else {
-                let error_message = format!(
-                    "Request failed with status code {}: {}",
-                    response.status(),
-                    response
-                        .text()
-                        .await
-                        .expect("Failed to parse response body")
-                );
-                Err(error_message)
+                Err(CustomError::ServerErr(format!(
+                    "Request failed: {}",
+                    response.status()
+                )))
             }
         }
-        Err(err) => {
-            let error_message = format!("Request failed: {}", err);
-            Err(error_message)
-        }
+        Err(err) => Err(CustomError::ServerErr(format!("Request failed: {}", err))),
     }
 }
 
@@ -64,7 +63,10 @@ mod tests {
     #[tokio::test]
     async fn test_get_receipts_empty_id() {
         let ids = [""];
-        let result = get_receipts(&ids).await;
-        assert_eq!(result, Err("id is empty".to_string()));
+        let result = get_push_receipts(&ids).await;
+        assert_eq!(
+            result,
+            Err(CustomError::InvalidArgument("id is empty".to_string()))
+        );
     }
 }

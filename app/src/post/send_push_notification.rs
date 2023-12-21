@@ -1,6 +1,8 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 
+use crate::error::CustomError;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum PushTicket {
     Success(PushSuccessTicket),
@@ -23,13 +25,6 @@ pub struct PushErrorTicket {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Details {
     pub error: String,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-pub enum Error {
-    InvalidArgument(String),
-    DeserializeErr(String),
-    ServerErr(String),
 }
 
 #[derive(Debug, Serialize)]
@@ -56,7 +51,7 @@ pub async fn send_push_notification(
     expo_push_tokens: &[&str],
     title: &str,
     body: &str,
-) -> Result<Vec<PushTicket>, Error> {
+) -> Result<Vec<PushTicket>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -65,7 +60,7 @@ pub async fn send_push_notification(
 
     for token in expo_push_tokens {
         if !token.starts_with("ExponentPushToken[") {
-            return Err(Error::InvalidArgument(format!(
+            return Err(CustomError::InvalidArgument(format!(
                 "Invalid expo push token: {}",
                 token
             )));
@@ -73,11 +68,11 @@ pub async fn send_push_notification(
     }
 
     if title.is_empty() {
-        return Err(Error::InvalidArgument("Title is empty".to_string()));
+        return Err(CustomError::InvalidArgument("Title is empty".to_string()));
     }
 
     if body.is_empty() {
-        return Err(Error::InvalidArgument("Body is empty".to_string()));
+        return Err(CustomError::InvalidArgument("Body is empty".to_string()));
     }
 
     let payload = PushPayload {
@@ -99,7 +94,10 @@ pub async fn send_push_notification(
                     .json::<PushResult>()
                     .await
                     .map_err(|err| {
-                        Error::DeserializeErr(format!("Failed to deserialize response: {:?}", err))
+                        CustomError::DeserializeErr(format!(
+                            "Failed to deserialize response: {:?}",
+                            err
+                        ))
                     })?
                     .data
                     .into_iter()
@@ -121,13 +119,13 @@ pub async fn send_push_notification(
                     })
                     .collect())
             } else {
-                Err(Error::ServerErr(format!(
+                Err(CustomError::ServerErr(format!(
                     "Failed to send request: {:?}",
                     response
                 )))
             }
         }
-        Err(err) => Err(Error::ServerErr(format!(
+        Err(err) => Err(CustomError::ServerErr(format!(
             "Failed to send request: {:?}",
             err
         ))),
@@ -137,14 +135,13 @@ pub async fn send_push_notification(
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use mockito;
 
     #[tokio::test]
     async fn test_invalid_expo_push_token() {
         let result = send_push_notification(&["invalid_token"], "Hello", "World").await;
         assert_eq!(
             result.unwrap_err(),
-            Error::InvalidArgument("Invalid expo push token: invalid_token".to_string())
+            CustomError::InvalidArgument("Invalid expo push token: invalid_token".to_string())
         );
     }
 
@@ -155,7 +152,7 @@ mod tests {
                 .await;
         assert_eq!(
             result.unwrap_err(),
-            Error::InvalidArgument("Title is empty".to_string())
+            CustomError::InvalidArgument("Title is empty".to_string())
         );
     }
 
@@ -166,7 +163,7 @@ mod tests {
                 .await;
         assert_eq!(
             result.unwrap_err(),
-            Error::InvalidArgument("Body is empty".to_string())
+            CustomError::InvalidArgument("Body is empty".to_string())
         );
     }
 
