@@ -7,18 +7,18 @@ use serde_json::Value;
 
 use crate::error::CustomError;
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub enum PushReceipt {
-    Success(HashMap<String, PushErrorReceipt>),
+    Success(HashMap<String, PushSuccessReceipt>),
     Error(Vec<PushErrorReceipt>),
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct PushSuccessReceipt {
     pub status: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct PushErrorReceipt {
     pub status: String,
     pub message: String,
@@ -70,24 +70,25 @@ pub async fn get_push_receipts(ids: &[&str]) -> Result<Vec<PushReceipt>, CustomE
                 let mut receipts = Vec::new();
                 for (id, item) in result.data {
                     if item.status == "ok" {
-                        receipts.push(PushReceipt::Success({
-                            let mut map = HashMap::new();
-                            map.insert(
-                                id,
-                                PushErrorReceipt {
-                                    status: item.status,
-                                    message: item.message.unwrap(),
-                                    details: item.details.unwrap(),
-                                },
-                            );
-                            map
-                        }));
-                    } else {
+                        let mut map = HashMap::new();
+                        map.insert(
+                            id.clone(),
+                            PushSuccessReceipt {
+                                status: item.status,
+                            },
+                        );
+                        receipts.push(PushReceipt::Success(map));
+                    } else if item.status == "error" {
                         receipts.push(PushReceipt::Error(vec![PushErrorReceipt {
                             status: item.status,
-                            message: item.message.unwrap(),
-                            details: item.details.unwrap(),
+                            message: item.message.unwrap_or_default(),
+                            details: item.details.unwrap_or_default(),
                         }]));
+                    } else {
+                        return Err(CustomError::DeserializeErr(format!(
+                            "Unknown status: {}",
+                            item.status
+                        )));
                     }
                 }
                 Ok(receipts)
