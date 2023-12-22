@@ -37,21 +37,32 @@ pub struct PushResultItem {
     pub details: Option<Value>,
 }
 
-pub async fn get_push_receipts(ids: Vec<String>) -> Result<Vec<PushReceipt>, CustomError> {
+#[derive(Debug, Deserialize, PartialEq, Clone)]
+pub struct PushIds {
+    ids: Vec<String>,
+}
+
+impl PushIds {
+    pub fn new(ids: Vec<String>) -> Self {
+        PushIds { ids }
+    }
+}
+
+pub async fn get_push_receipts(push_ids: PushIds) -> Result<Vec<PushReceipt>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
     let client = reqwest::Client::new();
 
-    for id in ids.clone() {
+    for id in push_ids.ids.clone() {
         if id.is_empty() {
             return Err(CustomError::InvalidArgument("id is empty".to_string()));
         }
     }
 
     let payload = json!({
-        "ids": ids,
+        "ids": push_ids.ids,
     });
 
     match client
@@ -110,16 +121,16 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_get_receipts() {
-        todo!("need to mock the response")
+        todo!("test")
     }
 
     #[tokio::test]
     async fn test_get_receipts_empty_id() {
-        let ids = vec!["".to_string()];
-        let result = get_push_receipts(ids).await;
+        let push_ids = PushIds::new(vec!["".to_string(), "id".to_string()]);
+        let result = get_push_receipts(push_ids).await;
         assert_eq!(
-            result,
-            Err(CustomError::InvalidArgument("id is empty".to_string()))
+            result.unwrap_err(),
+            CustomError::InvalidArgument("id is empty".to_string())
         );
     }
 }
