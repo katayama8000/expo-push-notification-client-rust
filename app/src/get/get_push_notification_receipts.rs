@@ -1,29 +1,15 @@
 use std::collections::HashMap;
 
+use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde::Deserialize;
-use serde_json::json;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::error::CustomError;
-
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub enum PushReceipt {
-    Success(HashMap<String, PushSuccessReceipt>),
-    Error(Vec<PushErrorReceipt>),
-}
-
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct PushSuccessReceipt {
-    pub status: String,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct PushErrorReceipt {
-    pub status: String,
-    pub message: String,
-    pub details: Value,
-}
+use crate::object::expo_push_error_recept::ExpoPushErrorReceipt;
+use crate::object::expo_push_receipt::ExpoPushReceipt;
+use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
+use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PushResult {
@@ -37,21 +23,19 @@ pub struct PushResultItem {
     pub details: Option<Value>,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct PushIds {
-    ids: Vec<String>,
-}
-
-impl PushIds {
-    pub fn new(ids: Vec<String>) -> Self {
-        PushIds { ids }
-    }
-}
-
-pub async fn get_push_receipts(push_ids: PushIds) -> Result<Vec<PushReceipt>, CustomError> {
+pub async fn get_push_notification_receipts(
+    push_ids: ExpoPushReceiptId,
+    access_token: Option<String>,
+) -> Result<Vec<ExpoPushReceipt>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    if let Some(token) = access_token {
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+        );
+    }
 
     let client = reqwest::Client::new();
 
@@ -84,16 +68,19 @@ pub async fn get_push_receipts(push_ids: PushIds) -> Result<Vec<PushReceipt>, Cu
                         let mut map = HashMap::new();
                         map.insert(
                             id.clone(),
-                            PushSuccessReceipt {
+                            ExpoPushSuccessReceipt {
                                 status: item.status,
                             },
                         );
-                        receipts.push(PushReceipt::Success(map));
+                        receipts.push(ExpoPushReceipt::Success(map));
                     } else if item.status == "error" {
-                        receipts.push(PushReceipt::Error(vec![PushErrorReceipt {
+                        receipts.push(ExpoPushReceipt::Error(vec![ExpoPushErrorReceipt {
                             status: item.status,
                             message: item.message.unwrap_or_default(),
-                            details: item.details.unwrap_or_default(),
+                            details: item
+                                .details
+                                .clone()
+                                .map(|v| serde_json::from_value::<Details>(v).unwrap()),
                         }]));
                     } else {
                         return Err(CustomError::DeserializeErr(format!(
@@ -126,8 +113,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_receipts_empty_id() {
-        let push_ids = PushIds::new(vec!["".to_string(), "id".to_string()]);
-        let result = get_push_receipts(push_ids).await;
+        let push_ids = ExpoPushReceiptId::new(vec!["".to_string(), "id".to_string()]);
+        let result = get_push_notification_receipts(push_ids, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("id is empty".to_string())

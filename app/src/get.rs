@@ -1,1 +1,1 @@
-pub mod get_push_receipts;
+pub mod get_push_notification_receipts;
