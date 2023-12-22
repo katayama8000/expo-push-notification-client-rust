@@ -1,27 +1,15 @@
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 
-use crate::{error::CustomError, get_push_notification_receipts::Details};
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum ExpoPushTicket {
-    Success(ExpoPushSuccessTicket),
-    Error(ExpoPushErrorTicket),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ExpoPushSuccessTicket {
-    pub status: String,
-    pub id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ExpoPushErrorTicket {
-    pub status: String,
-    pub message: String,
-    pub details: Option<Details>,
-}
+use crate::{
+    error::CustomError,
+    object::{
+        details::Details, expo_push_message::ExpoPushMessage,
+        expo_push_success_ticket::ExpoPushSuccessTicket,
+    },
+    object::{expo_push_error_ticket::ExpoPushErrorTicket, expo_push_ticket::ExpoPushTicket},
+};
 
 #[derive(Debug, Deserialize)]
 struct PushResult {
@@ -34,93 +22,6 @@ struct PushResultItem {
     id: Option<String>,
     message: Option<String>,
     details: Option<Value>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ExpoPushMessage {
-    to: Vec<String>,
-    title: String,
-    body: String,
-    data: Option<serde_json::Value>,
-    ttl: Option<u64>,
-    expiration: Option<u64>,
-    priority: Option<String>,
-    subtitle: Option<String>,
-    sound: Option<String>,
-    badge: Option<u64>,
-    channel_id: Option<String>,
-    category_id: Option<String>,
-    mutable_content: Option<bool>,
-}
-
-impl ExpoPushMessage {
-    pub fn new(to: Vec<String>, title: String, body: String) -> Self {
-        ExpoPushMessage {
-            to,
-            title,
-            body,
-            data: None,
-            ttl: None,
-            expiration: None,
-            priority: None,
-            subtitle: None,
-            sound: None,
-            badge: None,
-            channel_id: None,
-            category_id: None,
-            mutable_content: None,
-        }
-    }
-
-    pub fn data(mut self, data: Value) -> Self {
-        self.data = Some(data);
-        self
-    }
-
-    pub fn ttl(mut self, ttl: u64) -> Self {
-        self.ttl = Some(ttl);
-        self
-    }
-
-    pub fn expiration(mut self, expiration: u64) -> Self {
-        self.expiration = Some(expiration);
-        self
-    }
-
-    pub fn priority(mut self, priority: String) -> Self {
-        self.priority = Some(priority);
-        self
-    }
-
-    pub fn subtitle(mut self, subtitle: String) -> Self {
-        self.subtitle = Some(subtitle);
-        self
-    }
-
-    pub fn sound(mut self, sound: String) -> Self {
-        self.sound = Some(sound);
-        self
-    }
-
-    pub fn badge(mut self, badge: u64) -> Self {
-        self.badge = Some(badge);
-        self
-    }
-
-    pub fn channel_id(mut self, channel_id: String) -> Self {
-        self.channel_id = Some(channel_id);
-        self
-    }
-
-    pub fn category_id(mut self, category_id: String) -> Self {
-        self.category_id = Some(category_id);
-        self
-    }
-
-    pub fn mutable_content(mut self, mutable_content: bool) -> Self {
-        self.mutable_content = Some(mutable_content);
-        self
-    }
 }
 
 pub async fn send_push_notifications(

@@ -2,42 +2,14 @@ use std::collections::HashMap;
 
 use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use serde_json::Value;
+use serde::Deserialize;
+use serde_json::{json, Value};
 
 use crate::error::CustomError;
-
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub enum ExpoPushReceipt {
-    Success(HashMap<String, ExpoPushSuccessReceipt>),
-    Error(Vec<ExpoPushErrorReceipt>),
-}
-
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct ExpoPushSuccessReceipt {
-    pub status: String,
-}
-
-#[derive(Debug, Deserialize, Clone, PartialEq)]
-pub struct ExpoPushErrorReceipt {
-    pub status: String,
-    pub message: String,
-    pub details: Option<Details>,
-}
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
-pub struct Details {
-    pub error: Option<ErrorType>,
-}
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
-pub enum ErrorType {
-    DeviceNotRegistered,
-    InvalidCredentials,
-    MessageTooBig,
-    MessageRateExceeded,
-}
+use crate::object::expo_push_error_recept::ExpoPushErrorReceipt;
+use crate::object::expo_push_receipt::ExpoPushReceipt;
+use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
+use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PushResult {
@@ -49,17 +21,6 @@ pub struct PushResultItem {
     pub status: String,
     pub message: Option<String>,
     pub details: Option<Value>,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct ExpoPushReceiptId {
-    ids: Vec<String>,
-}
-
-impl ExpoPushReceiptId {
-    pub fn new(ids: Vec<String>) -> Self {
-        ExpoPushReceiptId { ids }
-    }
 }
 
 pub async fn get_push_notification_receipts(
