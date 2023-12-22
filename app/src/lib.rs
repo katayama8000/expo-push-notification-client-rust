@@ -1,8 +1,8 @@
 pub mod error;
-mod expo;
-mod get;
-mod object;
-mod post;
+pub mod expo;
+pub mod get;
+pub mod object;
+pub mod post;
 pub use expo::expo::Expo;
 pub use get::get_push_notification_receipts;
 pub use object::{
