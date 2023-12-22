@@ -1,23 +1,23 @@
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::CustomError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum PushTicket {
-    Success(PushSuccessTicket),
-    Error(PushErrorTicket),
+pub enum ExpoPushTicket {
+    Success(ExpoPushSuccessTicket),
+    Error(ExpoPushErrorTicket),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PushSuccessTicket {
+pub struct ExpoPushSuccessTicket {
     pub status: String,
     pub id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PushErrorTicket {
+pub struct ExpoPushErrorTicket {
     pub status: String,
     pub message: String,
     pub details: Value,
@@ -37,7 +37,7 @@ struct PushResultItem {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PushMessage {
+pub struct ExpoPushMessage {
     to: Vec<String>,
     title: String,
     body: String,
@@ -53,9 +53,9 @@ pub struct PushMessage {
     mutable_content: Option<bool>,
 }
 
-impl PushMessage {
+impl ExpoPushMessage {
     pub fn new(to: Vec<String>, title: String, body: String) -> Self {
-        PushMessage {
+        ExpoPushMessage {
             to,
             title,
             body,
@@ -123,12 +123,19 @@ impl PushMessage {
     }
 }
 
-pub async fn send_push_notification(
-    push_message: PushMessage,
-) -> Result<Vec<PushTicket>, CustomError> {
+pub async fn send_push_notifications(
+    push_message: ExpoPushMessage,
+    access_token: Option<String>,
+) -> Result<Vec<ExpoPushTicket>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    if let Some(token) = access_token {
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+        );
+    }
 
     let client = reqwest::Client::new();
 
@@ -191,13 +198,13 @@ pub async fn send_push_notification(
                     .into_iter()
                     .map(|item| {
                         if item.status == "error" {
-                            PushTicket::Error(PushErrorTicket {
+                            ExpoPushTicket::Error(ExpoPushErrorTicket {
                                 status: item.status,
                                 message: item.message.expect("message is empty"),
                                 details: item.details.expect("details is empty"),
                             })
                         } else if item.status == "ok" {
-                            PushTicket::Success(PushSuccessTicket {
+                            ExpoPushTicket::Success(ExpoPushSuccessTicket {
                                 status: item.status,
                                 id: item.id.expect("id is empty"),
                             })
@@ -226,12 +233,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_invalid_expo_push_token() {
-        let expo_push_message = PushMessage::new(
+        let expo_push_message = ExpoPushMessage::new(
             vec![String::from("invalid_token")],
             "Hello".to_string(),
             "World".to_string(),
         );
-        let result = send_push_notification(expo_push_message).await;
+        let result = send_push_notifications(expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Invalid expo push token: invalid_token".to_string())
@@ -240,12 +247,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_title() {
-        let expo_push_message = PushMessage::new(
+        let expo_push_message = ExpoPushMessage::new(
             vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "".to_string(),
             "World".to_string(),
         );
-        let result = send_push_notification(expo_push_message).await;
+        let result = send_push_notifications(expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Title is empty".to_string())
@@ -254,12 +261,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_empty_body() {
-        let expo_push_message = PushMessage::new(
+        let expo_push_message = ExpoPushMessage::new(
             vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "Hello".to_string(),
             "".to_string(),
         );
-        let result = send_push_notification(expo_push_message).await;
+        let result = send_push_notifications(expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Body is empty".to_string())
@@ -268,13 +275,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_invalid_priority() {
-        let expo_push_message = PushMessage::new(
+        let expo_push_message = ExpoPushMessage::new(
             vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "Hello".to_string(),
             "World".to_string(),
         )
         .priority("invalid_priority".to_string());
-        let result = send_push_notification(expo_push_message).await;
+        let result = send_push_notifications(expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Invalid priority: invalid_priority".to_string())
@@ -283,13 +290,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_invalid_sound() {
-        let expo_push_message = PushMessage::new(
+        let expo_push_message = ExpoPushMessage::new(
             vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
             "Hello".to_string(),
             "World".to_string(),
         )
         .sound("invalid_sound".to_string());
-        let result = send_push_notification(expo_push_message).await;
+        let result = send_push_notifications(expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Invalid sound: invalid_sound".to_string())
