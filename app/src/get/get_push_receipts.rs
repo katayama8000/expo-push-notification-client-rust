@@ -39,7 +39,7 @@ pub struct PushResultItem {
 
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct PushIds {
-    pub ids: Vec<String>,
+    ids: Vec<String>,
 }
 
 impl PushIds {
