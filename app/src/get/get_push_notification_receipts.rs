@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 
@@ -19,11 +19,24 @@ pub struct ExpoPushSuccessReceipt {
     pub status: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 pub struct ExpoPushErrorReceipt {
     pub status: String,
     pub message: String,
-    pub details: Value,
+    pub details: Option<Details>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+pub struct Details {
+    pub error: Option<ErrorType>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+pub enum ErrorType {
+    DeviceNotRegistered,
+    InvalidCredentials,
+    MessageTooBig,
+    MessageRateExceeded,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -103,7 +116,10 @@ pub async fn get_push_notification_receipts(
                         receipts.push(ExpoPushReceipt::Error(vec![ExpoPushErrorReceipt {
                             status: item.status,
                             message: item.message.unwrap_or_default(),
-                            details: item.details.unwrap_or_default(),
+                            details: item
+                                .details
+                                .clone()
+                                .map(|v| serde_json::from_value::<Details>(v).unwrap()),
                         }]));
                     } else {
                         return Err(CustomError::DeserializeErr(format!(

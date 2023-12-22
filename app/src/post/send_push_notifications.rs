@@ -2,7 +2,7 @@ use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::error::CustomError;
+use crate::{error::CustomError, get_push_notification_receipts::Details};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ExpoPushTicket {
@@ -20,7 +20,7 @@ pub struct ExpoPushSuccessTicket {
 pub struct ExpoPushErrorTicket {
     pub status: String,
     pub message: String,
-    pub details: Value,
+    pub details: Option<Details>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -201,7 +201,9 @@ pub async fn send_push_notifications(
                             ExpoPushTicket::Error(ExpoPushErrorTicket {
                                 status: item.status,
                                 message: item.message.expect("message is empty"),
-                                details: item.details.expect("details is empty"),
+                                details: item
+                                    .details
+                                    .map(|v| serde_json::from_value::<Details>(v).unwrap()),
                             })
                         } else if item.status == "ok" {
                             ExpoPushTicket::Success(ExpoPushSuccessTicket {
