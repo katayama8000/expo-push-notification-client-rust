@@ -72,7 +72,7 @@ impl PushMessage {
         }
     }
 
-    pub fn data(mut self, data: serde_json::Value) -> Self {
+    pub fn data(mut self, data: Value) -> Self {
         self.data = Some(data);
         self
     }
