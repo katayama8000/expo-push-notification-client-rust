@@ -1,7 +1,9 @@
 use crate::{
     error::CustomError,
-    get_push_receipts::{get_push_notification_receipts, ExpoPushReceipt, ExpoPushReceiptId},
-    send_push_notification::{send_push_notifications, ExpoPushMessage, ExpoPushTicket},
+    get_push_notification_receipts::{
+        get_push_notification_receipts, ExpoPushReceipt, ExpoPushReceiptId,
+    },
+    send_push_notifications::{send_push_notifications, ExpoPushMessage, ExpoPushTicket},
 };
 
 pub struct Expo {

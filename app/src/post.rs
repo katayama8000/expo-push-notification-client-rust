@@ -1,1 +1,1 @@
-pub mod send_push_notification;
+pub mod send_push_notifications;
