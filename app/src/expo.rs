@@ -1,1 +1,1 @@
-pub mod expo;
+pub mod expo_client;
