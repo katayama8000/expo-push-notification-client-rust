@@ -1,6 +1,6 @@
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::{
     error::CustomError,
@@ -76,6 +76,27 @@ pub async fn send_push_notifications(
             )));
         }
     }
+
+    println!("{:?}", push_message);
+    // pushmessage json
+    let json = json!(
+    {
+        "to": push_message.to,
+        "title": push_message.title,
+        "body": push_message.body,
+        "data": push_message.data,
+        "ttl": push_message.ttl,
+        "expiration": push_message.expiration,
+        "priority": push_message.priority,
+        "subtitle": push_message.subtitle,
+        "sound": push_message.sound,
+        "badge": push_message.badge,
+        "channelId": push_message.channel_id,
+        "categoryId": push_message.category_id,
+        "mutableContent": push_message.mutable_content,
+    });
+
+    println!("{:?}", json);
 
     match client
         .post(URL)
