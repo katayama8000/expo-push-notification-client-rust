@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct ExpoPushReceiptId {
-    pub ids: Vec<String>,
+    ids: Vec<String>,
 }
 
 impl ExpoPushReceiptId {
