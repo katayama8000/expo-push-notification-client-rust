@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use crate::error::CustomError;
 use crate::object::expo_push_error_recept::ExpoPushErrorReceipt;
@@ -13,14 +13,14 @@ use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PushResult {
-    pub data: HashMap<String, PushResultItem>,
+    data: HashMap<String, PushResultItem>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct PushResultItem {
-    pub status: String,
-    pub message: Option<String>,
-    pub details: Option<Value>,
+    status: String,
+    message: Option<String>,
+    details: Option<Value>,
 }
 
 pub async fn get_push_notification_receipts(
@@ -39,20 +39,10 @@ pub async fn get_push_notification_receipts(
 
     let client = reqwest::Client::new();
 
-    for id in push_ids.ids.clone() {
-        if id.is_empty() {
-            return Err(CustomError::InvalidArgument("id is empty".to_string()));
-        }
-    }
-
-    let payload = json!({
-        "ids": push_ids.ids,
-    });
-
     match client
         .post(URL)
         .headers(headers)
-        .json(&payload)
+        .json(&push_ids)
         .send()
         .await
     {
