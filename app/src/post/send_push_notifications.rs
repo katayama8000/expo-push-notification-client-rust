@@ -78,36 +78,17 @@ pub async fn send_push_notifications(
     }
 
     println!("{:?}", push_message);
-    // pushmessage json
-    let json = json!(
+    // push_message を JSON に変換する
+    let json = serde_json::to_string(&push_message).unwrap();
+    println!("{}", json);
+
+    match client
+        .post(URL)
+        .headers(headers)
+        .json(&push_message)
+        .send()
+        .await
     {
-        "to": push_message.to,
-        "title": push_message.title,
-        "body": push_message.body,
-        "data": push_message.data,
-        "ttl": push_message.ttl,
-        "expiration": push_message.expiration,
-        "priority": push_message.priority,
-        "subtitle": push_message.subtitle,
-        "sound": push_message.sound,
-        "badge": push_message.badge,
-        "channelId": push_message.channel_id,
-        "categoryId": push_message.category_id,
-        "mutableContent": push_message.mutable_content,
-    });
-
-    #[derive(Debug, Deserialize, Serialize)]
-    struct Sample {
-        to: Vec<String>,
-    }
-
-    let sample = Sample {
-        to: vec![String::from("ExponentPushToken[GG5W7qB0nelNDkz5Y6A0sB]")],
-    };
-
-    println!("{:?}", json);
-
-    match client.post(URL).headers(headers).json(&sample).send().await {
         Ok(response) => {
             if response.status().is_success() {
                 Ok(response

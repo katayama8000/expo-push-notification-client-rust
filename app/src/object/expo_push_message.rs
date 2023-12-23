@@ -1,8 +1,9 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_with::skip_serializing_none;
+use std::collections::HashMap;
 
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExpoPushMessage {
     pub to: Vec<String>,
