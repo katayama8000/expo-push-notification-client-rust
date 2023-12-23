@@ -13,6 +13,5 @@ pub use object::{
 };
 
 pub use error::CustomError;
-pub use expo::expo_client::Expo;
-pub use expo::expo_client::ExpoClientOptions;
+pub use expo::expo_client::{Expo, ExpoClientOptions};
 use post::send_push_notifications;
