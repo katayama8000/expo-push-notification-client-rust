@@ -1,4 +1,4 @@
-# expo-server-sdk-rust
+# expo-push-notification-client
 This is a Expo Push Notification Rust Client. There is [Expo Push Notification Rust Client](https://github.com/expo/expo-server-sdk-rust) maintained by community but it is not maintained since 2019.
 
 ## client (ReactNative with Expo)
