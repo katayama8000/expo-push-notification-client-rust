@@ -1,5 +1,5 @@
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use crate::{
@@ -96,15 +96,18 @@ pub async fn send_push_notifications(
         "mutableContent": push_message.mutable_content,
     });
 
+    #[derive(Debug, Deserialize, Serialize)]
+    struct Sample {
+        to: Vec<String>,
+    }
+
+    let sample = Sample {
+        to: vec![String::from("ExponentPushToken[GG5W7qB0nelNDkz5Y6A0sB]")],
+    };
+
     println!("{:?}", json);
 
-    match client
-        .post(URL)
-        .headers(headers)
-        .json(&push_message)
-        .send()
-        .await
-    {
+    match client.post(URL).headers(headers).json(&sample).send().await {
         Ok(response) => {
             if response.status().is_success() {
                 Ok(response
@@ -139,13 +142,13 @@ pub async fn send_push_notifications(
                     .collect())
             } else {
                 Err(CustomError::ServerErr(format!(
-                    "Failed to send request: {:?}",
+                    "Failed to send request: {:?} ===> 1",
                     response
                 )))
             }
         }
         Err(err) => Err(CustomError::ServerErr(format!(
-            "Failed to send request: {:?}",
+            "Failed to send request: {:?} ===> 2",
             err
         ))),
     }
