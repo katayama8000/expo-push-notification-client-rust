@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
@@ -9,7 +8,7 @@ pub struct ExpoPushMessage {
     to: Vec<String>,
     title: String,
     body: String,
-    data: Option<HashMap<String, Value>>,
+    data: Option<HashMap<String, Vec<String>>>,
     ttl: Option<u64>,
     expiration: Option<u64>,
     priority: Option<String>,
@@ -40,7 +39,7 @@ impl ExpoPushMessage {
         }
     }
 
-    pub fn data(mut self, data: HashMap<String, Value>) -> Self {
+    pub fn data(mut self, data: HashMap<String, Vec<String>>) -> Self {
         self.data = Some(data);
         self
     }

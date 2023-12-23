@@ -58,11 +58,6 @@ pub async fn send_push_notifications(
         )));
     }
 
-    println!("{:?}", push_message);
-    // push_message を JSON に変換する
-    let json = serde_json::to_string(&push_message).unwrap();
-    println!("{}", json);
-
     match client
         .post(URL)
         .headers(headers)
