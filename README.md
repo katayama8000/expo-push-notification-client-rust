@@ -12,7 +12,7 @@ cargo add expo-push-notification-client
 ```
 #### how to use 
 ```rust
-use expo_server_sdk::{CustomError, Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushTicket};
+use expo_push_notification_client::{CustomError, Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushTicket};
 let expo = Expo::new(ExpoClientOptions {
     access_token: Some(access_token),
 });
