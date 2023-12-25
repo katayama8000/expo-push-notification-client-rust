@@ -1,5 +1,5 @@
 [package]
-name = "expo-push-notification-client"
+name = "expo_push_notification_client"
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"

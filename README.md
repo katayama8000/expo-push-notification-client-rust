@@ -6,9 +6,9 @@ You need to get Expo Push Token from Expo SDK and send it to Expo server first.
 See [Expo Push Notification Docs](https://docs.expo.dev/push-notifications/push-notifications-setup/) for more details.  
 
 ## server (Rust)
-#### install expo-push-notification-client crate
+#### install expo_push_notification_client crate
 ```bash
-cargo add expo-push-notification-client
+cargo add expo_push_notification_client
 ```
 #### how to use 
 ```rust
