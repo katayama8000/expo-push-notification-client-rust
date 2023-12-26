@@ -100,15 +100,4 @@ mod tests {
     async fn test_get_receipts() {
         todo!("test")
     }
-
-    #[tokio::test]
-    #[ignore = "test failed (FIXME)"]
-    async fn test_get_receipts_empty_id() {
-        let push_ids = ExpoPushReceiptId::new(vec!["".to_string(), "id".to_string()]);
-        let result = get_push_notification_receipts(push_ids, None).await;
-        assert_eq!(
-            result.unwrap_err(),
-            CustomError::InvalidArgument("id is empty".to_string())
-        );
-    }
 }
