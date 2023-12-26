@@ -34,7 +34,7 @@ impl Expo {
         &self,
         messages: ExpoPushMessage,
     ) -> Result<Vec<ExpoPushTicket>, CustomError> {
-        send_push_notifications(self.client.clone(), messages, self.access_token.clone()).await
+        send_push_notifications(self.client.clone(), messages, self.access_token.as_deref()).await
     }
 
     pub async fn get_push_notification_receipts(

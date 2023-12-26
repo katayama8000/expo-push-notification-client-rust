@@ -27,7 +27,7 @@ struct PushResultItem {
 pub(crate) async fn send_push_notifications(
     client: reqwest::Client,
     push_message: ExpoPushMessage,
-    access_token: Option<String>,
+    access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushTicket>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
