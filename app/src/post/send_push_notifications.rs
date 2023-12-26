@@ -24,7 +24,7 @@ struct PushResultItem {
     details: Option<Value>,
 }
 
-pub async fn send_push_notifications(
+pub(crate) async fn send_push_notifications(
     push_message: ExpoPushMessage,
     access_token: Option<String>,
 ) -> Result<Vec<ExpoPushTicket>, CustomError> {

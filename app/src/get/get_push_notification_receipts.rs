@@ -12,18 +12,18 @@ use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
 use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct PushResult {
+struct PushResult {
     data: HashMap<String, PushResultItem>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct PushResultItem {
+struct PushResultItem {
     status: String,
     message: Option<String>,
     details: Option<Value>,
 }
 
-pub async fn get_push_notification_receipts(
+pub(crate) async fn get_push_notification_receipts(
     push_ids: ExpoPushReceiptId,
     access_token: Option<String>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
