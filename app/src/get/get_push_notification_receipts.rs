@@ -24,6 +24,7 @@ struct PushResultItem {
 }
 
 pub(crate) async fn get_push_notification_receipts(
+    client: reqwest::Client,
     push_ids: ExpoPushReceiptId,
     access_token: Option<String>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
@@ -36,8 +37,6 @@ pub(crate) async fn get_push_notification_receipts(
             HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
         );
     }
-
-    let client = reqwest::Client::new();
 
     match client
         .post(URL)
@@ -93,8 +92,6 @@ pub(crate) async fn get_push_notification_receipts(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[tokio::test]
     #[ignore]
     async fn test_get_receipts() {
