@@ -41,7 +41,11 @@ impl Expo {
         &self,
         receipt_id: ExpoPushReceiptId,
     ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
-        get_push_notification_receipts(self.client.clone(), receipt_id, self.access_token.clone())
-            .await
+        get_push_notification_receipts(
+            self.client.clone(),
+            receipt_id,
+            self.access_token.as_deref(),
+        )
+        .await
     }
 }

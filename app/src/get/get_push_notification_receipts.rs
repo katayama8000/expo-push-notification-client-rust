@@ -26,7 +26,7 @@ struct PushResultItem {
 pub(crate) async fn get_push_notification_receipts(
     client: reqwest::Client,
     push_ids: ExpoPushReceiptId,
-    access_token: Option<String>,
+    access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
