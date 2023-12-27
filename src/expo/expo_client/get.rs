@@ -1,27 +1,16 @@
+mod response;
+
 use std::collections::HashMap;
 
 use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde::Deserialize;
-use serde_json::Value;
 
 use crate::error::CustomError;
+use crate::expo::expo_client::get::response::GetPushNotificationReceiptsResponse;
 use crate::object::expo_push_error_recept::ExpoPushErrorReceipt;
 use crate::object::expo_push_receipt::ExpoPushReceipt;
 use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
 use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
-
-#[derive(Debug, Deserialize, PartialEq)]
-struct GetPushNotificationReceiptsResponse {
-    data: HashMap<String, GetPushNotificationReceiptsResponseDataItem>,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-struct GetPushNotificationReceiptsResponseDataItem {
-    status: String,
-    message: Option<String>,
-    details: Option<Value>,
-}
 
 pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
@@ -47,7 +36,7 @@ pub(crate) async fn get_push_notification_receipts(
     {
         Ok(response) => {
             if response.status().is_success() {
-                let result: GetPushNotificationReceiptsResponse = response
+                let result = response
                     .json::<GetPushNotificationReceiptsResponse>()
                     .await
                     .map_err(|err| {
