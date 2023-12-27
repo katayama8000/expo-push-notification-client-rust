@@ -50,13 +50,11 @@ pub(crate) async fn send_push_notifications(
                     .map(|item| {
                         if item.status == "error" {
                             ExpoPushTicket::Error(ExpoPushErrorTicket {
-                                status: item.status,
                                 message: item.message.expect("message is empty"),
                                 details: item.details,
                             })
                         } else if item.status == "ok" {
                             ExpoPushTicket::Success(ExpoPushSuccessTicket {
-                                status: item.status,
                                 id: item.id.expect("id is empty"),
                             })
                         } else {
