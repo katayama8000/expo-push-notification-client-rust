@@ -171,7 +171,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_expo_push_message_builder() {
+    fn test_expo_push_message_builder() -> Result<(), ValidationError> {
         let message = ExpoPushMessageBuilder::new(
             vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
             "title".to_string(),
@@ -192,8 +192,7 @@ mod tests {
         .channel_id("channel_id".to_string())
         .category_id("category_id".to_string())
         .mutable_content(true)
-        .build()
-        .unwrap();
+        .build()?;
 
         assert_eq!(
             message,
@@ -218,6 +217,7 @@ mod tests {
                 mutable_content: Some(true),
             }
         );
+        Ok(())
     }
 
     #[test]
