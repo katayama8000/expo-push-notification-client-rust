@@ -10,6 +10,16 @@ pub enum CustomError {
     ServerErr(String),
 }
 
+#[derive(Debug, PartialEq, thiserror::Error)]
+pub enum ValidationError {
+    #[error("Invalid token")]
+    InvalidToken,
+    #[error("Invalid priority")]
+    InvalidPriority,
+    #[error("Invalid sound")]
+    InvalidSound,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -34,5 +44,12 @@ mod tests {
             CustomError::ServerErr("x".to_string()).to_string(),
             "Server error: x"
         );
+
+        assert_eq!(ValidationError::InvalidToken.to_string(), "Invalid token");
+        assert_eq!(
+            ValidationError::InvalidPriority.to_string(),
+            "Invalid priority"
+        );
+        assert_eq!(ValidationError::InvalidSound.to_string(), "Invalid sound");
     }
 }

@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
+use crate::error::ValidationError;
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ExpoPushMessage {
@@ -54,13 +56,6 @@ pub struct ExpoPushMessageBuilder {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ValidationError {
-    InvalidToken,
-    InvalidPriority,
-    InvalidSound,
 }
 
 impl ExpoPushMessageBuilder {
@@ -165,7 +160,6 @@ impl ExpoPushMessageBuilder {
     }
 }
 
-// add test
 #[cfg(test)]
 mod tests {
     use super::*;
