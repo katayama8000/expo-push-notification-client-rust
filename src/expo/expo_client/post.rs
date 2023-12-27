@@ -1,6 +1,7 @@
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
-use serde::Deserialize;
-use serde_json::Value;
+mod response;
+
+use response::SendPushNotificationResponse;
 
 use crate::{
     error::CustomError,
@@ -10,19 +11,6 @@ use crate::{
     },
     object::{expo_push_error_ticket::ExpoPushErrorTicket, expo_push_ticket::ExpoPushTicket},
 };
-
-#[derive(Debug, Deserialize)]
-struct SendPushNotificationResponse {
-    data: Vec<SendPushNotificationResponseDataItem>,
-}
-
-#[derive(Debug, Deserialize)]
-struct SendPushNotificationResponseDataItem {
-    status: String,
-    id: Option<String>,
-    message: Option<String>,
-    details: Option<Value>,
-}
 
 pub(crate) async fn send_push_notifications(
     client: &reqwest::Client,
