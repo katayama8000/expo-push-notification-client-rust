@@ -52,9 +52,7 @@ pub(crate) async fn send_push_notifications(
                             ExpoPushTicket::Error(ExpoPushErrorTicket {
                                 status: item.status,
                                 message: item.message.expect("message is empty"),
-                                details: item
-                                    .details
-                                    .map(|v| serde_json::from_value::<Details>(v).unwrap()),
+                                details: item.details,
                             })
                         } else if item.status == "ok" {
                             ExpoPushTicket::Success(ExpoPushSuccessTicket {

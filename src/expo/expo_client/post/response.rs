@@ -1,4 +1,4 @@
-use serde_json::Value;
+use crate::Details;
 
 #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
 pub(super) struct SendPushNotificationResponse {
@@ -10,11 +10,13 @@ pub(super) struct SendPushNotificationResponseDataItem {
     pub status: String,
     pub id: Option<String>,
     pub message: Option<String>,
-    pub details: Option<Value>,
+    pub details: Option<Details>,
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::DetailsErrorType;
+
     use super::*;
 
     #[test]
@@ -94,9 +96,9 @@ mod tests {
                         status: "error".to_string(),
                         id: None,
                         message: Some("\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string()),
-                        details: Some(serde_json::json!({
-                          "error": "DeviceNotRegistered"
-                        }))
+                        details: Some(Details {
+                          error: Some(DetailsErrorType::DeviceNotRegistered),
+                        })
                     },
                     SendPushNotificationResponseDataItem {
                         status: "ok".to_string(),
