@@ -26,8 +26,8 @@ impl Expo {
         }
     }
 
-    pub fn is_expo_push_token(&self, _token: &str) -> bool {
-        unimplemented!()
+    pub fn is_expo_push_token(token: &str) -> bool {
+        token.starts_with("ExponentPushToken[")
     }
 
     pub async fn send_push_notifications(
