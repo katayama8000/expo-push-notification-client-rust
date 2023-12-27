@@ -6,11 +6,15 @@ pub(super) struct SendPushNotificationResponse {
 }
 
 #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-pub(super) struct SendPushNotificationResponseDataItem {
-    pub status: String,
-    pub id: Option<String>,
-    pub message: Option<String>,
-    pub details: Option<Details>,
+#[serde(rename_all = "lowercase", tag = "status")]
+pub(super) enum SendPushNotificationResponseDataItem {
+    Ok {
+        id: String,
+    },
+    Error {
+        message: String,
+        details: Option<Details>,
+    },
 }
 
 #[cfg(test)]
@@ -37,29 +41,17 @@ mod tests {
             parsed,
             SendPushNotificationResponse {
                 data: vec![
-                    SendPushNotificationResponseDataItem {
-                        status: "ok".to_string(),
-                        id: Some("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()),
-                        message: None,
-                        details: None
+                    SendPushNotificationResponseDataItem::Ok {
+                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
                     },
-                    SendPushNotificationResponseDataItem {
-                        status: "ok".to_string(),
-                        id: Some("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string()),
-                        message: None,
-                        details: None
+                    SendPushNotificationResponseDataItem::Ok {
+                        id: "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
                     },
-                    SendPushNotificationResponseDataItem {
-                        status: "ok".to_string(),
-                        id: Some("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string()),
-                        message: None,
-                        details: None
+                    SendPushNotificationResponseDataItem::Ok {
+                        id: "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
                     },
-                    SendPushNotificationResponseDataItem {
-                        status: "ok".to_string(),
-                        id: Some("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string()),
-                        message: None,
-                        details: None
+                    SendPushNotificationResponseDataItem::Ok {
+                        id: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string(),
                     }
                 ]
             }
@@ -92,19 +84,14 @@ mod tests {
             parsed,
             SendPushNotificationResponse {
                 data: vec![
-                    SendPushNotificationResponseDataItem {
-                        status: "error".to_string(),
-                        id: None,
-                        message: Some("\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string()),
+                    SendPushNotificationResponseDataItem::Error {
+                        message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
                         details: Some(Details {
-                          error: Some(DetailsErrorType::DeviceNotRegistered),
+                            error: Some(DetailsErrorType::DeviceNotRegistered),
                         })
                     },
-                    SendPushNotificationResponseDataItem {
-                        status: "ok".to_string(),
-                        id: Some("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()),
-                        message: None,
-                        details: None
+                    SendPushNotificationResponseDataItem::Ok {
+                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
                     },
                 ]
             }

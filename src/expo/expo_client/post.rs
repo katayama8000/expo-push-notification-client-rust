@@ -5,11 +5,8 @@ use response::SendPushNotificationResponse;
 
 use crate::{
     error::CustomError,
-    object::{
-        details::Details, expo_push_message::ExpoPushMessage,
-        expo_push_success_ticket::ExpoPushSuccessTicket,
-    },
     object::{expo_push_error_ticket::ExpoPushErrorTicket, expo_push_ticket::ExpoPushTicket},
+    object::{expo_push_message::ExpoPushMessage, expo_push_success_ticket::ExpoPushSuccessTicket},
 };
 
 pub(crate) async fn send_push_notifications(
@@ -47,19 +44,14 @@ pub(crate) async fn send_push_notifications(
                     })?
                     .data
                     .into_iter()
-                    .map(|item| {
-                        if item.status == "error" {
-                            ExpoPushTicket::Error(ExpoPushErrorTicket {
-                                message: item.message.expect("message is empty"),
-                                details: item.details,
-                            })
-                        } else if item.status == "ok" {
-                            ExpoPushTicket::Success(ExpoPushSuccessTicket {
-                                id: item.id.expect("id is empty"),
-                            })
-                        } else {
-                            unreachable!("Unknown status: {}", item.status)
+                    .map(|item| match item {
+                        response::SendPushNotificationResponseDataItem::Ok { id } => {
+                            ExpoPushTicket::Success(ExpoPushSuccessTicket { id })
                         }
+                        response::SendPushNotificationResponseDataItem::Error {
+                            message,
+                            details,
+                        } => ExpoPushTicket::Error(ExpoPushErrorTicket { message, details }),
                     })
                     .collect())
             } else {
