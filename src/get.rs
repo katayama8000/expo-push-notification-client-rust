@@ -1,1 +1,0 @@
-pub mod get_push_notification_receipts;
