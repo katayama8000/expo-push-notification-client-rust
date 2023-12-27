@@ -12,12 +12,12 @@ use crate::{
 };
 
 #[derive(Debug, Deserialize)]
-struct PushResult {
-    data: Vec<PushResultItem>,
+struct SendPushNotificationResponse {
+    data: Vec<SendPushNotificationResponseDataItem>,
 }
 
 #[derive(Debug, Deserialize)]
-struct PushResultItem {
+struct SendPushNotificationResponseDataItem {
     status: String,
     id: Option<String>,
     message: Option<String>,
@@ -49,7 +49,7 @@ pub(crate) async fn send_push_notifications(
         Ok(response) => {
             if response.status().is_success() {
                 Ok(response
-                    .json::<PushResult>()
+                    .json::<SendPushNotificationResponse>()
                     .await
                     .map_err(|err| {
                         CustomError::DeserializeErr(format!(
