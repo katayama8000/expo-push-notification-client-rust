@@ -10,6 +10,7 @@ use crate::{
 
 pub struct Expo {
     access_token: Option<String>,
+    client: reqwest::Client,
 }
 
 #[derive(Debug, Clone)]
@@ -21,6 +22,7 @@ impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
         Expo {
             access_token: options.access_token,
+            client: reqwest::Client::new(),
         }
     }
 
@@ -32,13 +34,13 @@ impl Expo {
         &self,
         messages: ExpoPushMessage,
     ) -> Result<Vec<ExpoPushTicket>, CustomError> {
-        send_push_notifications(messages, self.access_token.clone()).await
+        send_push_notifications(&self.client, messages, self.access_token.as_deref()).await
     }
 
     pub async fn get_push_notification_receipts(
         &self,
         receipt_id: ExpoPushReceiptId,
     ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
-        get_push_notification_receipts(receipt_id, self.access_token.clone()).await
+        get_push_notification_receipts(&self.client, receipt_id, self.access_token.as_deref()).await
     }
 }

@@ -12,20 +12,21 @@ use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
 use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct PushResult {
+struct PushResult {
     data: HashMap<String, PushResultItem>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct PushResultItem {
+struct PushResultItem {
     status: String,
     message: Option<String>,
     details: Option<Value>,
 }
 
-pub async fn get_push_notification_receipts(
+pub(crate) async fn get_push_notification_receipts(
+    client: &reqwest::Client,
     push_ids: ExpoPushReceiptId,
-    access_token: Option<String>,
+    access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
@@ -36,8 +37,6 @@ pub async fn get_push_notification_receipts(
             HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
         );
     }
-
-    let client = reqwest::Client::new();
 
     match client
         .post(URL)
@@ -93,8 +92,6 @@ pub async fn get_push_notification_receipts(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[tokio::test]
     #[ignore]
     async fn test_get_receipts() {
