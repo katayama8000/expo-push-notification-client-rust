@@ -3,7 +3,7 @@ use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ExpoPushMessage {
     to: Vec<String>,
     title: String,
@@ -21,8 +21,51 @@ pub struct ExpoPushMessage {
 }
 
 impl ExpoPushMessage {
+    pub fn is_valid_expo_push_token(&self) -> bool {
+        self.to
+            .iter()
+            .all(|token| token.starts_with("ExponentPushToken["))
+    }
+
+    pub fn is_valid_priority(&self) -> bool {
+        self.priority
+            .as_ref()
+            .map(|p| p == "default" || p == "normal" || p == "high")
+            .unwrap_or(true)
+    }
+
+    pub fn is_valid_sound(&self) -> bool {
+        self.sound.as_ref().map(|s| s == "default").unwrap_or(true)
+    }
+}
+
+#[derive(Debug)]
+pub struct ExpoPushMessageBuilder {
+    to: Vec<String>,
+    title: String,
+    body: String,
+    data: Option<HashMap<String, Vec<String>>>,
+    ttl: Option<u64>,
+    expiration: Option<u64>,
+    priority: Option<String>,
+    subtitle: Option<String>,
+    sound: Option<String>,
+    badge: Option<u64>,
+    channel_id: Option<String>,
+    category_id: Option<String>,
+    mutable_content: Option<bool>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ValidationError {
+    InvalidToken,
+    InvalidPriority,
+    InvalidSound,
+}
+
+impl ExpoPushMessageBuilder {
     pub fn new(to: Vec<String>, title: String, body: String) -> Self {
-        ExpoPushMessage {
+        ExpoPushMessageBuilder {
             to,
             title,
             body,
@@ -89,32 +132,119 @@ impl ExpoPushMessage {
         self
     }
 
-    pub fn is_valid_expo_push_token(&self) -> bool {
-        for token in self.to.clone() {
-            if !token.starts_with("ExponentPushToken[") {
-                return false;
-            }
+    pub fn build(self) -> Result<ExpoPushMessage, ValidationError> {
+        let message = ExpoPushMessage {
+            to: self.to,
+            title: self.title,
+            body: self.body,
+            data: self.data,
+            ttl: self.ttl,
+            expiration: self.expiration,
+            priority: self.priority,
+            subtitle: self.subtitle,
+            sound: self.sound,
+            badge: self.badge,
+            channel_id: self.channel_id,
+            category_id: self.category_id,
+            mutable_content: self.mutable_content,
+        };
+
+        if !message.is_valid_expo_push_token() {
+            return Err(ValidationError::InvalidToken);
         }
-        true
+
+        if !message.is_valid_priority() {
+            return Err(ValidationError::InvalidPriority);
+        }
+
+        if !message.is_valid_sound() {
+            return Err(ValidationError::InvalidSound);
+        }
+
+        Ok(message)
+    }
+}
+
+// add test
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_expo_push_message_builder() -> Result<(), ValidationError> {
+        let message = ExpoPushMessageBuilder::new(
+            vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+            "title".to_string(),
+            "body".to_string(),
+        )
+        .data(
+            [("key".to_string(), vec!["value".to_string()])]
+                .iter()
+                .cloned()
+                .collect(),
+        )
+        .ttl(100)
+        .expiration(100)
+        .priority("high".to_string())
+        .subtitle("subtitle".to_string())
+        .sound("default".to_string())
+        .badge(1)
+        .channel_id("channel_id".to_string())
+        .category_id("category_id".to_string())
+        .mutable_content(true)
+        .build()?;
+
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                title: "title".to_string(),
+                body: "body".to_string(),
+                data: Some(
+                    [("key".to_string(), vec!["value".to_string()])]
+                        .iter()
+                        .cloned()
+                        .collect()
+                ),
+                ttl: Some(100),
+                expiration: Some(100),
+                priority: Some("high".to_string()),
+                subtitle: Some("subtitle".to_string()),
+                sound: Some("default".to_string()),
+                badge: Some(1),
+                channel_id: Some("channel_id".to_string()),
+                category_id: Some("category_id".to_string()),
+                mutable_content: Some(true),
+            }
+        );
+        Ok(())
     }
 
-    pub fn is_valid_priority(&self) -> bool {
-        if self.priority.is_some() {
-            let priority = self.priority.as_ref().unwrap();
-            if priority != "default" && priority != "normal" && priority != "high" {
-                return false;
-            }
-        }
-        true
+    #[test]
+    fn test_expo_push_message_builder_invalid_token() {
+        let message = ExpoPushMessageBuilder::new(
+            vec![
+                "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+                "invalid_token".to_string(),
+            ],
+            "title".to_string(),
+            "body".to_string(),
+        )
+        .build();
+
+        assert_eq!(message, Err(ValidationError::InvalidToken));
     }
 
-    pub fn is_valid_sound(&self) -> bool {
-        if self.sound.is_some() {
-            let sound = self.sound.as_ref().unwrap();
-            if sound != "default" {
-                return false;
-            }
-        }
-        true
+    #[test]
+    fn test_expo_push_message_builder_invalid_priority() {
+        let message = ExpoPushMessageBuilder::new(
+            vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+            "title".to_string(),
+            "body".to_string(),
+        )
+        .priority("invalid_priority".to_string())
+        .build();
+
+        assert_eq!(message, Err(ValidationError::InvalidPriority));
     }
 }
