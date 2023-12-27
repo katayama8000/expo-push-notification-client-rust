@@ -34,18 +34,13 @@ impl Expo {
         &self,
         messages: ExpoPushMessage,
     ) -> Result<Vec<ExpoPushTicket>, CustomError> {
-        send_push_notifications(self.client.clone(), messages, self.access_token.as_deref()).await
+        send_push_notifications(&self.client, messages, self.access_token.as_deref()).await
     }
 
     pub async fn get_push_notification_receipts(
         &self,
         receipt_id: ExpoPushReceiptId,
     ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
-        get_push_notification_receipts(
-            self.client.clone(),
-            receipt_id,
-            self.access_token.as_deref(),
-        )
-        .await
+        get_push_notification_receipts(&self.client, receipt_id, self.access_token.as_deref()).await
     }
 }

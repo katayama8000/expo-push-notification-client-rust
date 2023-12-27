@@ -24,7 +24,7 @@ struct PushResultItem {
 }
 
 pub(crate) async fn get_push_notification_receipts(
-    client: reqwest::Client,
+    client: &reqwest::Client,
     push_ids: ExpoPushReceiptId,
     access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {

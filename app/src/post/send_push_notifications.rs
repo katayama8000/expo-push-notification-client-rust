@@ -25,7 +25,7 @@ struct PushResultItem {
 }
 
 pub(crate) async fn send_push_notifications(
-    client: reqwest::Client,
+    client: &reqwest::Client,
     push_message: ExpoPushMessage,
     access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushTicket>, CustomError> {
@@ -122,7 +122,7 @@ mod tests {
             "World".to_string(),
         );
         let client = reqwest::Client::new();
-        let result = send_push_notifications(client, expo_push_message, None).await;
+        let result = send_push_notifications(&client, expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument(
@@ -141,7 +141,7 @@ mod tests {
             "World".to_string(),
         );
         let client = reqwest::Client::new();
-        let result = send_push_notifications(client, expo_push_message, None).await;
+        let result = send_push_notifications(&client, expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Title is empty".to_string())
@@ -157,7 +157,7 @@ mod tests {
             "".to_string(),
         );
         let client = reqwest::Client::new();
-        let result = send_push_notifications(client, expo_push_message, None).await;
+        let result = send_push_notifications(&client, expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("Body is empty".to_string())
@@ -173,7 +173,7 @@ mod tests {
         )
         .priority("invalid_priority".to_string());
         let client = reqwest::Client::new();
-        let result = send_push_notifications(client, expo_push_message, None).await;
+        let result = send_push_notifications(&client, expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument(
@@ -191,7 +191,7 @@ mod tests {
         )
         .sound("invalid_sound".to_string());
         let client = reqwest::Client::new();
-        let result = send_push_notifications(client, expo_push_message, None).await;
+        let result = send_push_notifications(&client, expo_push_message, None).await;
         assert_eq!(
             result.unwrap_err(),
             CustomError::InvalidArgument("sound must be default or null".to_string())
