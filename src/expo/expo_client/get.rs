@@ -12,12 +12,12 @@ use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
 use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct PushResult {
-    data: HashMap<String, PushResultItem>,
+struct GetPushNotificationReceiptsResponse {
+    data: HashMap<String, GetPushNotificationReceiptsResponseDataItem>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct PushResultItem {
+struct GetPushNotificationReceiptsResponseDataItem {
     status: String,
     message: Option<String>,
     details: Option<Value>,
@@ -47,9 +47,15 @@ pub(crate) async fn get_push_notification_receipts(
     {
         Ok(response) => {
             if response.status().is_success() {
-                let result: PushResult = response.json::<PushResult>().await.map_err(|err| {
-                    CustomError::DeserializeErr(format!("Failed to deserialize response: {}", err))
-                })?;
+                let result: GetPushNotificationReceiptsResponse = response
+                    .json::<GetPushNotificationReceiptsResponse>()
+                    .await
+                    .map_err(|err| {
+                        CustomError::DeserializeErr(format!(
+                            "Failed to deserialize response: {}",
+                            err
+                        ))
+                    })?;
 
                 let mut receipts = Vec::new();
                 for (id, item) in result.data {
