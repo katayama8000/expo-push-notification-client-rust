@@ -39,24 +39,6 @@ pub(crate) async fn send_push_notifications(
         );
     }
 
-    if !push_message.is_valid_expo_push_token() {
-        return Err(CustomError::InvalidArgument(format!(
-            "expo push toke must start with ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-        )));
-    }
-
-    if !push_message.is_valid_priority() {
-        return Err(CustomError::InvalidArgument(format!(
-            "priority must be one of default, normal, or high",
-        )));
-    }
-
-    if !push_message.is_valid_sound() {
-        return Err(CustomError::InvalidArgument(format!(
-            "sound must be default or null",
-        )));
-    }
-
     match client
         .post(URL)
         .headers(headers)
@@ -112,92 +94,6 @@ pub(crate) async fn send_push_notifications(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_invalid_expo_push_token() {
-        let expo_push_message = ExpoPushMessage::new(
-            vec![String::from("invalid_token")],
-            "Hello".to_string(),
-            "World".to_string(),
-        );
-        let client = reqwest::Client::new();
-        let result = send_push_notifications(&client, expo_push_message, None).await;
-        assert_eq!(
-            result.unwrap_err(),
-            CustomError::InvalidArgument(
-                "expo push toke must start with ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
-                    .to_string()
-            )
-        );
-    }
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_empty_title() {
-        let expo_push_message = ExpoPushMessage::new(
-            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
-            "".to_string(),
-            "World".to_string(),
-        );
-        let client = reqwest::Client::new();
-        let result = send_push_notifications(&client, expo_push_message, None).await;
-        assert_eq!(
-            result.unwrap_err(),
-            CustomError::InvalidArgument("Title is empty".to_string())
-        );
-    }
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_empty_body() {
-        let expo_push_message = ExpoPushMessage::new(
-            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
-            "Hello".to_string(),
-            "".to_string(),
-        );
-        let client = reqwest::Client::new();
-        let result = send_push_notifications(&client, expo_push_message, None).await;
-        assert_eq!(
-            result.unwrap_err(),
-            CustomError::InvalidArgument("Body is empty".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn test_invalid_priority() {
-        let expo_push_message = ExpoPushMessage::new(
-            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
-            "Hello".to_string(),
-            "World".to_string(),
-        )
-        .priority("invalid_priority".to_string());
-        let client = reqwest::Client::new();
-        let result = send_push_notifications(&client, expo_push_message, None).await;
-        assert_eq!(
-            result.unwrap_err(),
-            CustomError::InvalidArgument(
-                "priority must be one of default, normal, or high".to_string()
-            )
-        );
-    }
-
-    #[tokio::test]
-    async fn test_invalid_sound() {
-        let expo_push_message = ExpoPushMessage::new(
-            vec![String::from("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")],
-            "Hello".to_string(),
-            "World".to_string(),
-        )
-        .sound("invalid_sound".to_string());
-        let client = reqwest::Client::new();
-        let result = send_push_notifications(&client, expo_push_message, None).await;
-        assert_eq!(
-            result.unwrap_err(),
-            CustomError::InvalidArgument("sound must be default or null".to_string())
-        );
-    }
-
     #[tokio::test]
     #[ignore]
     async fn test_valid_post() {
