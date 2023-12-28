@@ -6,10 +6,13 @@ pub(super) struct GetPushNotificationReceiptsResponse {
 }
 
 #[derive(Debug, Eq, PartialEq, serde::Deserialize)]
-pub(super) struct GetPushNotificationReceiptsResponseDataItem {
-    pub status: String,
-    pub message: Option<String>,
-    pub details: Option<GetPushNotificationReceiptsResponseDataItemDetails>,
+#[serde(rename_all = "lowercase", tag = "status")]
+pub(super) enum GetPushNotificationReceiptsResponseDataItem {
+    Ok,
+    Error {
+        message: String,
+        details: Option<GetPushNotificationReceiptsResponseDataItemDetails>,
+    },
 }
 
 #[derive(Debug, Eq, PartialEq, serde::Deserialize)]
@@ -48,19 +51,11 @@ mod tests {
                     let mut map = HashMap::new();
                     map.insert(
                         "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "ok".to_string(),
-                            message: None,
-                            details: None,
-                        },
+                        GetPushNotificationReceiptsResponseDataItem::Ok,
                     );
                     map.insert(
                         "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "ok".to_string(),
-                            message: None,
-                            details: None,
-                        },
+                        GetPushNotificationReceiptsResponseDataItem::Ok,
                     );
                     map
                 }
@@ -121,17 +116,12 @@ mod tests {
                     let mut map = HashMap::new();
                     map.insert(
                         "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "ok".to_string(),
-                            message: None,
-                            details: None,
-                        },
+                        GetPushNotificationReceiptsResponseDataItem::Ok,
                     );
                     map.insert(
                         "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "error".to_string(),
-                            message: Some("...".to_string()),
+                        GetPushNotificationReceiptsResponseDataItem::Error {
+                            message: "...".to_string(),
                             details: Some(GetPushNotificationReceiptsResponseDataItemDetails {
                                 error: Some(PushReceiptError::DeviceNotRegistered),
                             }),
@@ -139,9 +129,8 @@ mod tests {
                     );
                     map.insert(
                         "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "error".to_string(),
-                            message: Some("...".to_string()),
+                        GetPushNotificationReceiptsResponseDataItem::Error {
+                            message: "...".to_string(),
                             details: Some(GetPushNotificationReceiptsResponseDataItemDetails {
                                 error: Some(PushReceiptError::MessageTooBig),
                             }),
@@ -149,9 +138,8 @@ mod tests {
                     );
                     map.insert(
                         "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "error".to_string(),
-                            message: Some("...".to_string()),
+                        GetPushNotificationReceiptsResponseDataItem::Error {
+                            message: "...".to_string(),
                             details: Some(GetPushNotificationReceiptsResponseDataItemDetails {
                                 error: Some(PushReceiptError::MessageRateExceeded),
                             }),
@@ -159,9 +147,8 @@ mod tests {
                     );
                     map.insert(
                         "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "error".to_string(),
-                            message: Some("...".to_string()),
+                        GetPushNotificationReceiptsResponseDataItem::Error {
+                            message: "...".to_string(),
                             details: Some(GetPushNotificationReceiptsResponseDataItemDetails {
                                 error: Some(PushReceiptError::MismatchSenderId),
                             }),
@@ -169,9 +156,8 @@ mod tests {
                     );
                     map.insert(
                         "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD".to_string(),
-                        GetPushNotificationReceiptsResponseDataItem {
-                            status: "error".to_string(),
-                            message: Some("...".to_string()),
+                        GetPushNotificationReceiptsResponseDataItem::Error {
+                            message: "...".to_string(),
                             details: Some(GetPushNotificationReceiptsResponseDataItemDetails {
                                 error: Some(PushReceiptError::InvalidCredentials),
                             }),
