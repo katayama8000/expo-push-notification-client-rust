@@ -92,18 +92,27 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn priority(mut self, priority: String) -> Self {
-        self.priority = Some(priority);
+    pub fn priority<S>(mut self, priority: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.priority = Some(priority.into());
         self
     }
 
-    pub fn subtitle(mut self, subtitle: String) -> Self {
-        self.subtitle = Some(subtitle);
+    pub fn subtitle<S>(mut self, subtitle: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.subtitle = Some(subtitle.into());
         self
     }
 
-    pub fn sound(mut self, sound: String) -> Self {
-        self.sound = Some(sound);
+    pub fn sound<S>(mut self, sound: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.sound = Some(sound.into());
         self
     }
 
@@ -112,13 +121,19 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn channel_id(mut self, channel_id: String) -> Self {
-        self.channel_id = Some(channel_id);
+    pub fn channel_id<S>(mut self, channel_id: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.channel_id = Some(channel_id.into());
         self
     }
 
-    pub fn category_id(mut self, category_id: String) -> Self {
-        self.category_id = Some(category_id);
+    pub fn category_id<S>(mut self, category_id: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.category_id = Some(category_id.into());
         self
     }
 
@@ -201,12 +216,12 @@ mod tests {
             )
             .ttl(100)
             .expiration(100)
-            .priority("high".to_string())
-            .subtitle("subtitle".to_string())
-            .sound("default".to_string())
+            .priority("high")
+            .subtitle("subtitle")
+            .sound("default")
             .badge(1)
-            .channel_id("channel_id".to_string())
-            .category_id("category_id".to_string())
+            .channel_id("channel_id")
+            .category_id("category_id")
             .mutable_content(true)
             .title("title")
             .build()?;
@@ -251,7 +266,7 @@ mod tests {
     #[test]
     fn test_expo_push_message_builder_invalid_priority() {
         let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
-            .priority("invalid_priority".to_string())
+            .priority("invalid_priority")
             .build();
 
         assert_eq!(message, Err(ValidationError::InvalidPriority));
