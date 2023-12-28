@@ -23,6 +23,16 @@ pub struct ExpoPushMessage {
     mutable_content: Option<bool>,
 }
 
+impl ExpoPushMessage {
+    pub fn builder<S, I>(to: I) -> ExpoPushMessageBuilder
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        ExpoPushMessageBuilder::new(to.into_iter().map(|s| s.into()).collect::<Vec<String>>())
+    }
+}
+
 #[derive(Debug)]
 pub struct ExpoPushMessageBuilder {
     to: Vec<String>,
@@ -41,7 +51,7 @@ pub struct ExpoPushMessageBuilder {
 }
 
 impl ExpoPushMessageBuilder {
-    pub fn new(to: Vec<String>) -> Self {
+    pub(crate) fn new(to: Vec<String>) -> Self {
         ExpoPushMessageBuilder {
             to,
             title: None,
@@ -181,27 +191,25 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder() -> Result<(), ValidationError> {
-        let message = ExpoPushMessageBuilder::new(vec![
-            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
-        ])
-        .body("body")
-        .data(
-            [("key".to_string(), vec!["value".to_string()])]
-                .iter()
-                .cloned()
-                .collect(),
-        )
-        .ttl(100)
-        .expiration(100)
-        .priority("high".to_string())
-        .subtitle("subtitle".to_string())
-        .sound("default".to_string())
-        .badge(1)
-        .channel_id("channel_id".to_string())
-        .category_id("category_id".to_string())
-        .mutable_content(true)
-        .title("title")
-        .build()?;
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .body("body")
+            .data(
+                [("key".to_string(), vec!["value".to_string()])]
+                    .iter()
+                    .cloned()
+                    .collect(),
+            )
+            .ttl(100)
+            .expiration(100)
+            .priority("high".to_string())
+            .subtitle("subtitle".to_string())
+            .sound("default".to_string())
+            .badge(1)
+            .channel_id("channel_id".to_string())
+            .category_id("category_id".to_string())
+            .mutable_content(true)
+            .title("title")
+            .build()?;
 
         assert_eq!(
             message,
@@ -231,9 +239,9 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder_invalid_token() {
-        let message = ExpoPushMessageBuilder::new(vec![
-            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
-            "invalid_token".to_string(),
+        let message = ExpoPushMessage::builder([
+            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            "invalid_token",
         ])
         .build();
 
@@ -242,11 +250,9 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder_invalid_priority() {
-        let message = ExpoPushMessageBuilder::new(vec![
-            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
-        ])
-        .priority("invalid_priority".to_string())
-        .build();
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .priority("invalid_priority".to_string())
+            .build();
 
         assert_eq!(message, Err(ValidationError::InvalidPriority));
     }
