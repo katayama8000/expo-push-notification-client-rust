@@ -1,28 +1,13 @@
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
-use serde::Deserialize;
-use serde_json::Value;
+mod response;
+
+use response::SendPushNotificationResponse;
 
 use crate::{
     error::CustomError,
-    object::{
-        details::Details, expo_push_message::ExpoPushMessage,
-        expo_push_success_ticket::ExpoPushSuccessTicket,
-    },
     object::{expo_push_error_ticket::ExpoPushErrorTicket, expo_push_ticket::ExpoPushTicket},
+    object::{expo_push_message::ExpoPushMessage, expo_push_success_ticket::ExpoPushSuccessTicket},
 };
-
-#[derive(Debug, Deserialize)]
-struct PushResult {
-    data: Vec<PushResultItem>,
-}
-
-#[derive(Debug, Deserialize)]
-struct PushResultItem {
-    status: String,
-    id: Option<String>,
-    message: Option<String>,
-    details: Option<Value>,
-}
 
 pub(crate) async fn send_push_notifications(
     client: &reqwest::Client,
@@ -49,7 +34,7 @@ pub(crate) async fn send_push_notifications(
         Ok(response) => {
             if response.status().is_success() {
                 Ok(response
-                    .json::<PushResult>()
+                    .json::<SendPushNotificationResponse>()
                     .await
                     .map_err(|err| {
                         CustomError::DeserializeErr(format!(
@@ -59,23 +44,14 @@ pub(crate) async fn send_push_notifications(
                     })?
                     .data
                     .into_iter()
-                    .map(|item| {
-                        if item.status == "error" {
-                            ExpoPushTicket::Error(ExpoPushErrorTicket {
-                                status: item.status,
-                                message: item.message.expect("message is empty"),
-                                details: item
-                                    .details
-                                    .map(|v| serde_json::from_value::<Details>(v).unwrap()),
-                            })
-                        } else if item.status == "ok" {
-                            ExpoPushTicket::Success(ExpoPushSuccessTicket {
-                                status: item.status,
-                                id: item.id.expect("id is empty"),
-                            })
-                        } else {
-                            unreachable!("Unknown status: {}", item.status)
+                    .map(|item| match item {
+                        response::SendPushNotificationResponseDataItem::Ok { id } => {
+                            ExpoPushTicket::Success(ExpoPushSuccessTicket { id })
                         }
+                        response::SendPushNotificationResponseDataItem::Error {
+                            message,
+                            details,
+                        } => ExpoPushTicket::Error(ExpoPushErrorTicket { message, details }),
                     })
                     .collect())
             } else {
