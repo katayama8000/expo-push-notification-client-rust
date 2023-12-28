@@ -23,25 +23,6 @@ pub struct ExpoPushMessage {
     mutable_content: Option<bool>,
 }
 
-impl ExpoPushMessage {
-    pub fn is_valid_expo_push_token(&self) -> bool {
-        self.to
-            .iter()
-            .all(|token| token.starts_with("ExponentPushToken["))
-    }
-
-    pub fn is_valid_priority(&self) -> bool {
-        self.priority
-            .as_ref()
-            .map(|p| p == "default" || p == "normal" || p == "high")
-            .unwrap_or(true)
-    }
-
-    pub fn is_valid_sound(&self) -> bool {
-        self.sound.as_ref().map(|s| s == "default").unwrap_or(true)
-    }
-}
-
 #[derive(Debug)]
 pub struct ExpoPushMessageBuilder {
     to: Vec<String>,
@@ -137,6 +118,18 @@ impl ExpoPushMessageBuilder {
     }
 
     pub fn build(self) -> Result<ExpoPushMessage, ValidationError> {
+        if !self.is_valid_expo_push_token() {
+            return Err(ValidationError::InvalidToken);
+        }
+
+        if !self.is_valid_priority() {
+            return Err(ValidationError::InvalidPriority);
+        }
+
+        if !self.is_valid_sound() {
+            return Err(ValidationError::InvalidSound);
+        }
+
         let message = ExpoPushMessage {
             to: self.to,
             title: self.title,
@@ -153,18 +146,6 @@ impl ExpoPushMessageBuilder {
             mutable_content: self.mutable_content,
         };
 
-        if !message.is_valid_expo_push_token() {
-            return Err(ValidationError::InvalidToken);
-        }
-
-        if !message.is_valid_priority() {
-            return Err(ValidationError::InvalidPriority);
-        }
-
-        if !message.is_valid_sound() {
-            return Err(ValidationError::InvalidSound);
-        }
-
         Ok(message)
     }
 
@@ -174,6 +155,23 @@ impl ExpoPushMessageBuilder {
     {
         self.title = Some(title.into());
         self
+    }
+
+    fn is_valid_expo_push_token(&self) -> bool {
+        self.to
+            .iter()
+            .all(|token| token.starts_with("ExponentPushToken["))
+    }
+
+    fn is_valid_priority(&self) -> bool {
+        self.priority
+            .as_ref()
+            .map(|p| p == "default" || p == "normal" || p == "high")
+            .unwrap_or(true)
+    }
+
+    fn is_valid_sound(&self) -> bool {
+        self.sound.as_ref().map(|s| s == "default").unwrap_or(true)
     }
 }
 
