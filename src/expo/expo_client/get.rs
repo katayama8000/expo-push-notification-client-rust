@@ -11,6 +11,7 @@ use crate::object::expo_push_error_recept::ExpoPushErrorReceipt;
 use crate::object::expo_push_receipt::ExpoPushReceipt;
 use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
 use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
+use crate::DetailsErrorType;
 
 pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
@@ -61,10 +62,23 @@ pub(crate) async fn get_push_notification_receipts(
                         receipts.push(ExpoPushReceipt::Error(vec![ExpoPushErrorReceipt {
                             status: item.status,
                             message: item.message.unwrap_or_default(),
-                            details: item
-                                .details
-                                .clone()
-                                .map(|v| serde_json::from_value::<Details>(v).unwrap()),
+                            details: item.details.map(|details| Details {
+                                error: details.error.map(|error| match error {
+                                    response::PushReceiptError::DeviceNotRegistered => {
+                                        DetailsErrorType::DeviceNotRegistered
+                                    }
+                                    response::PushReceiptError::MessageTooBig => {
+                                        DetailsErrorType::MessageTooBig
+                                    }
+                                    response::PushReceiptError::MessageRateExceeded => {
+                                        DetailsErrorType::MessageRateExceeded
+                                    }
+                                    response::PushReceiptError::MismatchSenderId => todo!(),
+                                    response::PushReceiptError::InvalidCredentials => {
+                                        DetailsErrorType::InvalidCredentials
+                                    }
+                                }),
+                            }),
                         }]));
                     } else {
                         return Err(CustomError::DeserializeErr(format!(
