@@ -10,11 +10,11 @@ use crate::{
 };
 
 pub(crate) async fn send_push_notifications(
+    base_url: &str,
     client: &reqwest::Client,
     push_message: ExpoPushMessage,
     access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushTicket>, CustomError> {
-    const URL: &str = "https://exp.host/--/api/v2/push/send";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     if let Some(token) = access_token {
@@ -25,7 +25,7 @@ pub(crate) async fn send_push_notifications(
     }
 
     match client
-        .post(URL)
+        .post(format!("{}/--/api/v2/push/send", base_url))
         .headers(headers)
         .json(&push_message)
         .send()
@@ -70,10 +70,45 @@ pub(crate) async fn send_push_notifications(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[tokio::test]
-    #[ignore]
-    async fn test_valid_post() {
-        todo!("test")
+    async fn test_valid_post() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let response = send_push_notifications(
+            &url,
+            &reqwest::Client::new(),
+            ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            None,
+        )
+        .await?;
+
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Success(ExpoPushSuccessTicket {
+                id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()
+            })]
+        );
+        mock.assert();
+        Ok(())
     }
 
     #[tokio::test]
