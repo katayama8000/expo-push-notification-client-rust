@@ -4,12 +4,13 @@ use std::collections::HashMap;
 
 use crate::error::ValidationError;
 
+// <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ExpoPushMessage {
     to: Vec<String>,
-    title: String,
-    body: String,
+    title: Option<String>,
+    body: Option<String>,
     data: Option<HashMap<String, Vec<String>>>,
     ttl: Option<u64>,
     expiration: Option<u64>,
@@ -44,8 +45,8 @@ impl ExpoPushMessage {
 #[derive(Debug)]
 pub struct ExpoPushMessageBuilder {
     to: Vec<String>,
-    title: String,
-    body: String,
+    title: Option<String>,
+    body: Option<String>,
     data: Option<HashMap<String, Vec<String>>>,
     ttl: Option<u64>,
     expiration: Option<u64>,
@@ -59,11 +60,11 @@ pub struct ExpoPushMessageBuilder {
 }
 
 impl ExpoPushMessageBuilder {
-    pub fn new(to: Vec<String>, title: String, body: String) -> Self {
+    pub fn new(to: Vec<String>) -> Self {
         ExpoPushMessageBuilder {
             to,
-            title,
-            body,
+            title: None,
+            body: None,
             data: None,
             ttl: None,
             expiration: None,
@@ -75,6 +76,14 @@ impl ExpoPushMessageBuilder {
             category_id: None,
             mutable_content: None,
         }
+    }
+
+    pub fn body<S>(mut self, body: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.body = Some(body.into());
+        self
     }
 
     pub fn data(mut self, data: HashMap<String, Vec<String>>) -> Self {
@@ -158,6 +167,14 @@ impl ExpoPushMessageBuilder {
 
         Ok(message)
     }
+
+    pub fn title<S>(mut self, title: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.title = Some(title.into());
+        self
+    }
 }
 
 #[cfg(test)]
@@ -166,11 +183,10 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder() -> Result<(), ValidationError> {
-        let message = ExpoPushMessageBuilder::new(
-            vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
-            "title".to_string(),
-            "body".to_string(),
-        )
+        let message = ExpoPushMessageBuilder::new(vec![
+            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+        ])
+        .body("body")
         .data(
             [("key".to_string(), vec!["value".to_string()])]
                 .iter()
@@ -186,14 +202,15 @@ mod tests {
         .channel_id("channel_id".to_string())
         .category_id("category_id".to_string())
         .mutable_content(true)
+        .title("title")
         .build()?;
 
         assert_eq!(
             message,
             ExpoPushMessage {
                 to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
-                title: "title".to_string(),
-                body: "body".to_string(),
+                title: Some("title".to_string()),
+                body: Some("body".to_string()),
                 data: Some(
                     [("key".to_string(), vec!["value".to_string()])]
                         .iter()
@@ -216,14 +233,10 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder_invalid_token() {
-        let message = ExpoPushMessageBuilder::new(
-            vec![
-                "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
-                "invalid_token".to_string(),
-            ],
-            "title".to_string(),
-            "body".to_string(),
-        )
+        let message = ExpoPushMessageBuilder::new(vec![
+            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+            "invalid_token".to_string(),
+        ])
         .build();
 
         assert_eq!(message, Err(ValidationError::InvalidToken));
@@ -231,11 +244,9 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder_invalid_priority() {
-        let message = ExpoPushMessageBuilder::new(
-            vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
-            "title".to_string(),
-            "body".to_string(),
-        )
+        let message = ExpoPushMessageBuilder::new(vec![
+            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+        ])
         .priority("invalid_priority".to_string())
         .build();
 
