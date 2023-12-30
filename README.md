@@ -2,7 +2,7 @@
 
 This is a Expo Push Notification Client for Rust. There is [Expo Server SDK](https://github.com/expo/expo-server-sdk-rust) maintained by community but it is not maintained since 2019.
 
-[![ci](https://github.com/katayama8000/expo_push_notification_client/workflows/ci/badge.svg)](https://github.com/katayama8000/expo_push_notification_client/actions)
+<!-- [![ci](https://github.com/katayama8000/expo_push_notification_client/workflows/ci/badge.svg)](https://github.com/katayama8000/expo_push_notification_client/actions) -->
 [![crates.io](https://img.shields.io/crates/v/expo_push_notification_client)](https://crates.io/crates/expo_push_notification_client)
 [![docs.rs](https://img.shields.io/docsrs/expo_push_notification_client)](https://docs.rs/expo_push_notification_client)
 [![license](https://img.shields.io/crates/l/expo_push_notification_client)](LICENSE)
