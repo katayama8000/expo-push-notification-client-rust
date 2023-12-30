@@ -35,7 +35,7 @@ impl Expo {
         {
             return true;
         } else if regex::Regex::new(r"^[a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12}$")
-            .unwrap()
+            .expect("regex is valid")
             .is_match(token)
         {
             return true;
