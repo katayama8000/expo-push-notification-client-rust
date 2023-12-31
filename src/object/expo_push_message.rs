@@ -210,30 +210,38 @@ mod tests {
 
     #[test]
     fn test_expo_push_message_builder() -> Result<(), ValidationError> {
-        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
-            .body("body")
-            .data(
-                [("key".to_string(), vec!["value".to_string()])]
-                    .iter()
-                    .cloned()
-                    .collect(),
-            )
-            .ttl(100)
-            .expiration(100)
-            .priority("high")
-            .subtitle("subtitle")
-            .sound("default")
-            .badge(1)
-            .channel_id("channel_id")
-            .category_id("category_id")
-            .mutable_content(true)
-            .title("title")
-            .build()?;
+        let message = ExpoPushMessage::builder([
+            "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        ])
+        .body("body")
+        .data(
+            [("key".to_string(), vec!["value".to_string()])]
+                .iter()
+                .cloned()
+                .collect(),
+        )
+        .ttl(100)
+        .expiration(100)
+        .priority("high")
+        .subtitle("subtitle")
+        .sound("default")
+        .badge(1)
+        .channel_id("channel_id")
+        .category_id("category_id")
+        .mutable_content(true)
+        .title("title")
+        .build()?;
 
         assert_eq!(
             message,
             ExpoPushMessage {
-                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                to: vec![
+                    "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+                    "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+                    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string()
+                ],
                 title: Some("title".to_string()),
                 body: Some("body".to_string()),
                 data: Some(
