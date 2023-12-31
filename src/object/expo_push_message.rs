@@ -185,7 +185,7 @@ impl ExpoPushMessageBuilder {
     fn is_valid_expo_push_token(&self) -> bool {
         self.to.iter().all(|token| {
             ((token.starts_with("ExponentPushToken[") || token.starts_with("ExpoPushToken["))
-                && token.ends_with("]"))
+                && token.ends_with(']'))
                 || regex::Regex::new(r"^[a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12}$")
                     .expect("regex is valid")
                     .is_match(token)
