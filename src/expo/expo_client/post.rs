@@ -5,8 +5,7 @@ use response::SendPushNotificationResponse;
 
 use crate::{
     error::CustomError,
-    object::{expo_push_error_ticket::ExpoPushErrorTicket, expo_push_ticket::ExpoPushTicket},
-    object::{expo_push_message::ExpoPushMessage, expo_push_success_ticket::ExpoPushSuccessTicket},
+    object::{ExpoPushErrorTicket, ExpoPushMessage, ExpoPushSuccessTicket, ExpoPushTicket},
 };
 
 pub(crate) async fn send_push_notifications(
