@@ -11,6 +11,7 @@ use crate::{
 
 use self::{get::get_push_notification_receipts, post::send_push_notifications};
 
+#[derive(Clone)]
 pub struct Expo {
     access_token: Option<String>,
     client: reqwest::Client,
@@ -56,5 +57,16 @@ impl Expo {
         receipt_id: ExpoPushReceiptId,
     ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
         get_push_notification_receipts(&self.client, receipt_id, self.access_token.as_deref()).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn impl_clone_for_expo() {
+        fn assert_impl_clone<T: Clone>() {}
+        assert_impl_clone::<Expo>();
     }
 }
