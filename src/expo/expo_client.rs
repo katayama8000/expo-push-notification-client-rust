@@ -67,4 +67,24 @@ mod tests {
         fn assert_impl_clone<T: Clone>() {}
         assert_impl_clone::<Expo>();
     }
+
+    #[test]
+    fn test_is_expo_push_token() {
+        for (s, expected) in [
+            ("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", true),
+            ("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx", false),
+            ("ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]", true),
+            ("ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx", false),
+            ("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", true),
+            ("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx", false),
+        ] {
+            assert_eq!(
+                Expo::is_expo_push_token(s),
+                expected,
+                "Expo::is_expo_push_token({}) should be {}",
+                s,
+                expected
+            );
+        }
+    }
 }
