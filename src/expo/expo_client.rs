@@ -10,6 +10,7 @@ use self::{get::get_push_notification_receipts, post::send_push_notifications};
 
 pub struct Expo {
     access_token: Option<String>,
+    base_url: String,
     client: reqwest::Client,
 }
 
@@ -22,30 +23,30 @@ impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
         Expo {
             access_token: options.access_token,
+            base_url: "https://exp.host".to_string(),
             client: reqwest::Client::new(),
         }
     }
 
     pub fn is_expo_push_token(token: &str) -> bool {
-        if (token.starts_with("ExponentPushToken[") || token.starts_with("ExpoPushToken["))
-            && token.ends_with("]")
-        {
-            return true;
-        } else if regex::Regex::new(r"^[a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12}$")
-            .expect("regex is valid")
-            .is_match(token)
-        {
-            return true;
-        }
-
-        false
+        ((token.starts_with("ExponentPushToken[") || token.starts_with("ExpoPushToken["))
+            && token.ends_with(']'))
+            || regex::Regex::new(r"^[a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12}$")
+                .expect("regex is valid")
+                .is_match(token)
     }
 
     pub async fn send_push_notifications(
         &self,
         messages: ExpoPushMessage,
     ) -> Result<Vec<ExpoPushTicket>, CustomError> {
-        send_push_notifications(&self.client, messages, self.access_token.as_deref()).await
+        send_push_notifications(
+            &self.base_url,
+            &self.client,
+            messages,
+            self.access_token.as_deref(),
+        )
+        .await
     }
 
     pub async fn get_push_notification_receipts(

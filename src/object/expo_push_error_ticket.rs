@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::details::Details;
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ExpoPushErrorTicket {
     pub message: String,
     pub details: Option<Details>,
