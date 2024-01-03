@@ -1,17 +1,14 @@
 mod response;
 
-use std::collections::HashMap;
-
-use reqwest::header::AUTHORIZATION;
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-
 use crate::error::CustomError;
 use crate::expo::expo_client::get::response::GetPushNotificationReceiptsResponse;
-use crate::object::expo_push_error_recept::ExpoPushErrorReceipt;
-use crate::object::expo_push_receipt::ExpoPushReceipt;
-use crate::object::expo_push_success_recept::ExpoPushSuccessReceipt;
-use crate::object::{details::Details, expo_push_receipt_id::ExpoPushReceiptId};
+use crate::object::{
+    Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushReceiptId, ExpoPushSuccessReceipt,
+};
 use crate::DetailsErrorType;
+use reqwest::header::AUTHORIZATION;
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+use std::collections::HashMap;
 
 pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
