@@ -56,7 +56,13 @@ impl Expo {
         &self,
         receipt_id: GetPushNotificationReceiptsRequest,
     ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
-        get_push_notification_receipts(&self.client, receipt_id, self.access_token.as_deref()).await
+        get_push_notification_receipts(
+            &self.base_url,
+            &self.client,
+            receipt_id,
+            self.access_token.as_deref(),
+        )
+        .await
     }
 }
 

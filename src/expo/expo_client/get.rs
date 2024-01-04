@@ -25,11 +25,11 @@ struct PushResultItem {
 }
 
 pub(crate) async fn get_push_notification_receipts(
+    base_url: &str,
     client: &reqwest::Client,
     push_ids: GetPushNotificationReceiptsRequest,
     access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
-    const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     if let Some(token) = access_token {
@@ -40,7 +40,7 @@ pub(crate) async fn get_push_notification_receipts(
     }
 
     match client
-        .post(URL)
+        .post(format!("{}/--/api/v2/push/getReceipts", base_url))
         .headers(headers)
         .json(&push_ids)
         .send()
