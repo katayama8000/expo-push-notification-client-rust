@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-pub struct ExpoPushReceiptId {
+pub struct GetPushNotificationReceiptsRequest {
     ids: Vec<String>,
 }
 
-impl ExpoPushReceiptId {
+impl GetPushNotificationReceiptsRequest {
     pub fn new(ids: Vec<String>) -> Self {
-        ExpoPushReceiptId { ids }
+        Self { ids }
     }
 }

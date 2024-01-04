@@ -7,7 +7,8 @@ use serde_json::Value;
 
 use crate::error::CustomError;
 use crate::object::{
-    Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushReceiptId, ExpoPushSuccessReceipt,
+    Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushSuccessReceipt,
+    GetPushNotificationReceiptsRequest,
 };
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -24,7 +25,7 @@ struct PushResultItem {
 
 pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
-    push_ids: ExpoPushReceiptId,
+    push_ids: GetPushNotificationReceiptsRequest,
     access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";

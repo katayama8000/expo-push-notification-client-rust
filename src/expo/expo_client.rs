@@ -3,7 +3,9 @@ mod post;
 
 use crate::{
     error::CustomError,
-    object::{ExpoPushMessage, ExpoPushReceipt, ExpoPushReceiptId, ExpoPushTicket},
+    object::{
+        ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket, GetPushNotificationReceiptsRequest,
+    },
 };
 
 use self::{get::get_push_notification_receipts, post::send_push_notifications};
@@ -52,7 +54,7 @@ impl Expo {
 
     pub async fn get_push_notification_receipts(
         &self,
-        receipt_id: ExpoPushReceiptId,
+        receipt_id: GetPushNotificationReceiptsRequest,
     ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
         get_push_notification_receipts(&self.client, receipt_id, self.access_token.as_deref()).await
     }
