@@ -1,11 +1,14 @@
 mod get;
 mod post;
 
+use std::collections::HashMap;
+
 use crate::{
     error::CustomError,
     object::{
         ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket, GetPushNotificationReceiptsRequest,
     },
+    ExpoPushReceiptId,
 };
 
 use self::{get::get_push_notification_receipts, post::send_push_notifications};
@@ -55,7 +58,7 @@ impl Expo {
     pub async fn get_push_notification_receipts(
         &self,
         receipt_id: GetPushNotificationReceiptsRequest,
-    ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
+    ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError> {
         get_push_notification_receipts(
             &self.base_url,
             &self.client,

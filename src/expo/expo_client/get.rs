@@ -29,7 +29,7 @@ pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
     push_ids: GetPushNotificationReceiptsRequest,
     access_token: Option<&str>,
-) -> Result<Vec<ExpoPushReceipt>, CustomError> {
+) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError> {
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     if let Some(token) = access_token {
@@ -52,26 +52,27 @@ pub(crate) async fn get_push_notification_receipts(
                     CustomError::DeserializeErr(format!("Failed to deserialize response: {}", err))
                 })?;
 
-                let mut receipts = Vec::new();
+                let mut receipts = HashMap::new();
                 for (id, item) in result.data {
                     if item.status == "ok" {
-                        let mut map = HashMap::new();
-                        map.insert(
+                        receipts.insert(
                             id.clone(),
-                            ExpoPushSuccessReceipt {
+                            ExpoPushReceipt::Success(ExpoPushSuccessReceipt {
                                 status: item.status,
-                            },
+                            }),
                         );
-                        receipts.push(ExpoPushReceipt::Success(map));
                     } else if item.status == "error" {
-                        receipts.push(ExpoPushReceipt::Error(vec![ExpoPushErrorReceipt {
-                            status: item.status,
-                            message: item.message.unwrap_or_default(),
-                            details: item
-                                .details
-                                .clone()
-                                .map(|v| serde_json::from_value::<Details>(v).unwrap()),
-                        }]));
+                        receipts.insert(
+                            id.clone(),
+                            ExpoPushReceipt::Error(ExpoPushErrorReceipt {
+                                status: item.status,
+                                message: item.message.unwrap_or_default(),
+                                details: item
+                                    .details
+                                    .clone()
+                                    .map(|v| serde_json::from_value::<Details>(v).unwrap()),
+                            }),
+                        );
                     } else {
                         return Err(CustomError::DeserializeErr(format!(
                             "Unknown status: {}",
