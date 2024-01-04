@@ -10,10 +10,11 @@ use crate::object::{
     Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushSuccessReceipt,
     GetPushNotificationReceiptsRequest,
 };
+use crate::ExpoPushReceiptId;
 
 #[derive(Debug, Deserialize, PartialEq)]
 struct PushResult {
-    data: HashMap<String, PushResultItem>,
+    data: HashMap<ExpoPushReceiptId, PushResultItem>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
