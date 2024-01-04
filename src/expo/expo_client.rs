@@ -71,6 +71,10 @@ impl Expo {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr as _;
+
+    use crate::ExpoPushSuccessReceipt;
+
     use super::*;
 
     #[test]
@@ -97,5 +101,61 @@ mod tests {
                 expected
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX","YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY","ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": {
+        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" },
+        "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ": { "status": "ok" }
+    }
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo {
+            access_token: None,
+            base_url: url,
+            client: reqwest::Client::new(),
+        };
+
+        let response = expo
+            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
+                "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
+            ]))
+            .await?;
+
+        assert_eq!(response, {
+            let mut map = HashMap::new();
+            map.insert(
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                ExpoPushReceipt::Success(ExpoPushSuccessReceipt {
+                    status: "ok".to_string(),
+                }),
+            );
+            map.insert(
+                ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
+                ExpoPushReceipt::Success(ExpoPushSuccessReceipt {
+                    status: "ok".to_string(),
+                }),
+            );
+            map
+        });
+        mock.assert();
+        Ok(())
     }
 }

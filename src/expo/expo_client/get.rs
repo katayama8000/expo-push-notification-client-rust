@@ -91,12 +91,3 @@ pub(crate) async fn get_push_notification_receipts(
         Err(err) => Err(CustomError::ServerErr(format!("Request failed: {}", err))),
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[tokio::test]
-    #[ignore]
-    async fn test_get_receipts() {
-        todo!("test")
-    }
-}
