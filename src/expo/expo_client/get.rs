@@ -55,17 +55,12 @@ pub(crate) async fn get_push_notification_receipts(
                 let mut receipts = HashMap::new();
                 for (id, item) in result.data {
                     if item.status == "ok" {
-                        receipts.insert(
-                            id.clone(),
-                            ExpoPushReceipt::Success(ExpoPushSuccessReceipt {
-                                status: item.status,
-                            }),
-                        );
+                        receipts
+                            .insert(id.clone(), ExpoPushReceipt::Success(ExpoPushSuccessReceipt));
                     } else if item.status == "error" {
                         receipts.insert(
                             id.clone(),
                             ExpoPushReceipt::Error(ExpoPushErrorReceipt {
-                                status: item.status,
                                 message: item.message.unwrap_or_default(),
                                 details: item
                                     .details
