@@ -7,8 +7,7 @@ use serde_json::Value;
 
 use crate::error::CustomError;
 use crate::object::{
-    Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushSuccessReceipt,
-    GetPushNotificationReceiptsRequest,
+    Details, ExpoPushErrorReceipt, ExpoPushReceipt, GetPushNotificationReceiptsRequest,
 };
 use crate::ExpoPushReceiptId;
 
@@ -55,8 +54,7 @@ pub(crate) async fn get_push_notification_receipts(
                 let mut receipts = HashMap::new();
                 for (id, item) in result.data {
                     if item.status == "ok" {
-                        receipts
-                            .insert(id.clone(), ExpoPushReceipt::Success(ExpoPushSuccessReceipt));
+                        receipts.insert(id.clone(), ExpoPushReceipt::Success);
                     } else if item.status == "error" {
                         receipts.insert(
                             id.clone(),

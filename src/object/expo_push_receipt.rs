@@ -1,12 +1,9 @@
 use serde::Deserialize;
 
-use super::{
-    expo_push_error_receipt::ExpoPushErrorReceipt,
-    expo_push_success_receipt::ExpoPushSuccessReceipt,
-};
+use super::expo_push_error_receipt::ExpoPushErrorReceipt;
 
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 pub enum ExpoPushReceipt {
-    Success(ExpoPushSuccessReceipt),
+    Success,
     Error(ExpoPushErrorReceipt),
 }

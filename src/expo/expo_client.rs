@@ -73,8 +73,6 @@ impl Expo {
 mod tests {
     use std::str::FromStr as _;
 
-    use crate::ExpoPushSuccessReceipt;
-
     use super::*;
 
     #[test]
@@ -143,11 +141,11 @@ mod tests {
             let mut map = HashMap::new();
             map.insert(
                 ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-                ExpoPushReceipt::Success(ExpoPushSuccessReceipt),
+                ExpoPushReceipt::Success,
             );
             map.insert(
                 ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
-                ExpoPushReceipt::Success(ExpoPushSuccessReceipt),
+                ExpoPushReceipt::Success,
             );
             map
         });
