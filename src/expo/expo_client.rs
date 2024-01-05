@@ -73,6 +73,8 @@ impl Expo {
 mod tests {
     use std::str::FromStr as _;
 
+    use crate::{Details, DetailsErrorType, ExpoPushErrorReceipt};
+
     use super::*;
 
     #[test]
@@ -149,6 +151,100 @@ mod tests {
             );
             map
         });
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_push_notification_receipts_error_response() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": {
+        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": {
+            "status": "error",
+            "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+            "details": {
+                "error": "DeviceNotRegistered"
+            }
+        }
+    }
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo {
+            access_token: None,
+            base_url: url,
+            client: reqwest::Client::new(),
+        };
+
+        let response = expo
+            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+            ]))
+            .await?;
+
+        assert_eq!(response, {
+            let mut map = HashMap::new();
+            map.insert(
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                ExpoPushReceipt::Error(ExpoPushErrorReceipt {
+                    message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
+                    details: Some(Details { error: Some(DetailsErrorType::DeviceNotRegistered) }),
+                }),
+            );
+            map
+        });
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_push_notification_receipts_error_response_4xx() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+            .with_status(401)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "error": "invalid_token",
+    "error_description":"The bearer token is invalid"
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo {
+            access_token: None,
+            base_url: url,
+            client: reqwest::Client::new(),
+        };
+
+        let result = expo
+            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+            ]))
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Server error: Request failed: 401 Unauthorized"
+        );
         mock.assert();
         Ok(())
     }
