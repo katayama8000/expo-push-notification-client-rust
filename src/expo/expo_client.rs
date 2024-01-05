@@ -1,7 +1,11 @@
-mod get;
 mod post;
 
 use std::collections::HashMap;
+
+use reqwest::{
+    header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE},
+    Method,
+};
 
 use crate::{
     error::CustomError,
@@ -11,7 +15,7 @@ use crate::{
     ExpoPushReceiptId,
 };
 
-use self::{get::get_push_notification_receipts, post::send_push_notifications};
+use self::post::send_push_notifications;
 
 #[derive(Clone)]
 pub struct Expo {
@@ -57,15 +61,65 @@ impl Expo {
 
     pub async fn get_push_notification_receipts(
         &self,
-        receipt_id: GetPushNotificationReceiptsRequest,
+        request: GetPushNotificationReceiptsRequest,
     ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError> {
-        get_push_notification_receipts(
-            &self.base_url,
-            &self.client,
-            receipt_id,
-            self.access_token.as_deref(),
-        )
-        .await
+        #[derive(Debug, PartialEq, serde::Deserialize)]
+        struct GetPushNotificationReceiptsSuccessfulResponse {
+            data: HashMap<ExpoPushReceiptId, ExpoPushReceipt>,
+        }
+        let response: GetPushNotificationReceiptsSuccessfulResponse = self
+            .send_request(Method::POST, "/--/api/v2/push/getReceipts", request)
+            .await?;
+        Ok(response.data)
+    }
+
+    async fn send_request<S, T>(
+        &self,
+        method: Method,
+        path: &str,
+        body: S,
+    ) -> Result<T, CustomError>
+    where
+        S: serde::Serialize,
+        T: serde::de::DeserializeOwned,
+    {
+        let access_token = &self.access_token;
+        let base_url = &self.base_url;
+        let client = &self.client;
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        if let Some(token) = access_token {
+            headers.insert(
+                AUTHORIZATION,
+                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+            );
+        }
+
+        match client
+            .request(method, format!("{}{}", base_url, path))
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    Ok(response.json::<T>().await.map_err(|err| {
+                        CustomError::DeserializeErr(format!(
+                            "Failed to deserialize response: {}",
+                            err
+                        ))
+                    })?)
+                } else {
+                    Err(CustomError::ServerErr(format!(
+                        "Request failed: {}",
+                        response.status()
+                    )))
+                }
+            }
+            Err(err) => Err(CustomError::ServerErr(format!("Request failed: {}", err))),
+        }
     }
 }
 
