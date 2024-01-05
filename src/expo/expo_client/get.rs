@@ -2,25 +2,14 @@ use std::collections::HashMap;
 
 use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde::Deserialize;
-use serde_json::Value;
 
 use crate::error::CustomError;
-use crate::object::{
-    Details, ExpoPushErrorReceipt, ExpoPushReceipt, GetPushNotificationReceiptsRequest,
-};
+use crate::object::{ExpoPushReceipt, GetPushNotificationReceiptsRequest};
 use crate::ExpoPushReceiptId;
 
-#[derive(Debug, Deserialize, PartialEq)]
-struct PushResult {
-    data: HashMap<ExpoPushReceiptId, PushResultItem>,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-struct PushResultItem {
-    status: String,
-    message: Option<String>,
-    details: Option<Value>,
+#[derive(Debug, PartialEq, serde::Deserialize)]
+struct GetPushNotificationReceiptsSuccessfulResponse {
+    data: HashMap<ExpoPushReceiptId, ExpoPushReceipt>,
 }
 
 pub(crate) async fn get_push_notification_receipts(
@@ -47,33 +36,16 @@ pub(crate) async fn get_push_notification_receipts(
     {
         Ok(response) => {
             if response.status().is_success() {
-                let result: PushResult = response.json::<PushResult>().await.map_err(|err| {
-                    CustomError::DeserializeErr(format!("Failed to deserialize response: {}", err))
-                })?;
-
-                let mut receipts = HashMap::new();
-                for (id, item) in result.data {
-                    if item.status == "ok" {
-                        receipts.insert(id.clone(), ExpoPushReceipt::Success);
-                    } else if item.status == "error" {
-                        receipts.insert(
-                            id.clone(),
-                            ExpoPushReceipt::Error(ExpoPushErrorReceipt {
-                                message: item.message.unwrap_or_default(),
-                                details: item
-                                    .details
-                                    .clone()
-                                    .map(|v| serde_json::from_value::<Details>(v).unwrap()),
-                            }),
-                        );
-                    } else {
-                        return Err(CustomError::DeserializeErr(format!(
-                            "Unknown status: {}",
-                            item.status
-                        )));
-                    }
-                }
-                Ok(receipts)
+                Ok(response
+                    .json::<GetPushNotificationReceiptsSuccessfulResponse>()
+                    .await
+                    .map_err(|err| {
+                        CustomError::DeserializeErr(format!(
+                            "Failed to deserialize response: {}",
+                            err
+                        ))
+                    })?
+                    .data)
             } else {
                 Err(CustomError::ServerErr(format!(
                     "Request failed: {}",
