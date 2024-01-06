@@ -344,8 +344,96 @@ mod tests {
         Ok(())
     }
 
-    // TODO: test_send_push_notifications_error_response
-    // TODO: test_send_push_notifications_4xx
+    #[tokio::test]
+    async fn test_send_push_notifications_error_response() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        {
+            "status": "error",
+            "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+            "details": {
+                "error": "DeviceNotRegistered"
+            }
+        }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo {
+            access_token: None,
+            base_url: url,
+            client: reqwest::Client::new(),
+        };
+
+        let response = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await?;
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Error(ExpoPushErrorReceipt {
+                message: r#""ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" is not a registered push notification recipient"#.to_string(),
+                details: Some(Details {
+                    error: Some(DetailsErrorType::DeviceNotRegistered),
+                })
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_4xx() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(401)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "error": "invalid_token",
+    "error_description":"The bearer token is invalid"
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo {
+            access_token: None,
+            base_url: url,
+            client: reqwest::Client::new(),
+        };
+
+        let result = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Server error: Request failed: 401 Unauthorized"
+        );
+        mock.assert();
+        Ok(())
+    }
 
     #[test]
     fn test_successful_response_body() -> anyhow::Result<()> {
