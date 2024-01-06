@@ -1,28 +1,15 @@
-use std::collections::HashMap;
-
-use reqwest::header::AUTHORIZATION;
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde::Deserialize;
-use serde_json::Value;
+mod response;
 
 use crate::error::CustomError;
+use crate::expo::expo_client::get::response::GetPushNotificationReceiptsResponse;
 use crate::object::{
     Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushSuccessReceipt,
     GetPushNotificationReceiptsRequest,
 };
-use crate::ExpoPushReceiptId;
-
-#[derive(Debug, Deserialize, PartialEq)]
-struct PushResult {
-    data: HashMap<ExpoPushReceiptId, PushResultItem>,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-struct PushResultItem {
-    status: String,
-    message: Option<String>,
-    details: Option<Value>,
-}
+use crate::{DetailsErrorType, ExpoPushReceiptId};
+use reqwest::header::AUTHORIZATION;
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+use std::collections::HashMap;
 
 pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
@@ -48,35 +35,52 @@ pub(crate) async fn get_push_notification_receipts(
     {
         Ok(response) => {
             if response.status().is_success() {
-                let result: PushResult = response.json::<PushResult>().await.map_err(|err| {
-                    CustomError::DeserializeErr(format!("Failed to deserialize response: {}", err))
-                })?;
+                let result = response
+                    .json::<GetPushNotificationReceiptsResponse>()
+                    .await
+                    .map_err(|err| {
+                        CustomError::DeserializeErr(format!(
+                            "Failed to deserialize response: {}",
+                            err
+                        ))
+                    })?;
 
                 let mut receipts = Vec::new();
                 for (id, item) in result.data {
-                    if item.status == "ok" {
-                        let mut map = HashMap::new();
-                        map.insert(
-                            id.clone(),
-                            ExpoPushSuccessReceipt {
-                                status: item.status,
-                            },
-                        );
-                        receipts.push(ExpoPushReceipt::Success(map));
-                    } else if item.status == "error" {
-                        receipts.push(ExpoPushReceipt::Error(vec![ExpoPushErrorReceipt {
-                            status: item.status,
-                            message: item.message.unwrap_or_default(),
-                            details: item
-                                .details
-                                .clone()
-                                .map(|v| serde_json::from_value::<Details>(v).unwrap()),
-                        }]));
-                    } else {
-                        return Err(CustomError::DeserializeErr(format!(
-                            "Unknown status: {}",
-                            item.status
-                        )));
+                    match item {
+                        response::GetPushNotificationReceiptsResponseDataItem::Ok => {
+                            let mut map = HashMap::new();
+                            map.insert(
+                                ExpoPushReceiptId::try_from(id).expect("id must be String"),
+                                ExpoPushSuccessReceipt,
+                            );
+                            receipts.push(ExpoPushReceipt::Success(map));
+                        }
+                        response::GetPushNotificationReceiptsResponseDataItem::Error {
+                            message,
+                            details,
+                        } => {
+                            receipts.push(ExpoPushReceipt::Error(vec![ExpoPushErrorReceipt {
+                                message,
+                                details: details.map(|details| Details {
+                                    error: details.error.map(|error| match error {
+                                        response::PushReceiptError::DeviceNotRegistered => {
+                                            DetailsErrorType::DeviceNotRegistered
+                                        }
+                                        response::PushReceiptError::MessageTooBig => {
+                                            DetailsErrorType::MessageTooBig
+                                        }
+                                        response::PushReceiptError::MessageRateExceeded => {
+                                            DetailsErrorType::MessageRateExceeded
+                                        }
+                                        response::PushReceiptError::MismatchSenderId => todo!(),
+                                        response::PushReceiptError::InvalidCredentials => {
+                                            DetailsErrorType::InvalidCredentials
+                                        }
+                                    }),
+                                }),
+                            }]));
+                        }
                     }
                 }
                 Ok(receipts)
