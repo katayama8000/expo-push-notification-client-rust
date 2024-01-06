@@ -1,16 +1,10 @@
-use std::collections::HashMap;
-
 use serde::Deserialize;
 
-use crate::ExpoPushReceiptId;
-
-use super::{
-    expo_push_error_receipt::ExpoPushErrorReceipt,
-    expo_push_success_receipt::ExpoPushSuccessReceipt,
-};
+use super::expo_push_error_receipt::ExpoPushErrorReceipt;
 
 #[derive(Debug, Deserialize, PartialEq, Clone)]
+#[serde(rename_all = "camelCase", tag = "status")]
 pub enum ExpoPushReceipt {
-    Success(HashMap<ExpoPushReceiptId, ExpoPushSuccessReceipt>),
-    Error(Vec<ExpoPushErrorReceipt>),
+    Ok,
+    Error(ExpoPushErrorReceipt),
 }
