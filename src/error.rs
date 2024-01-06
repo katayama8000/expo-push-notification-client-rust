@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, PartialEq, thiserror::Error)]
+#[derive(Debug, Deserialize, PartialEq, thiserror::Error, Eq, Hash)]
 pub enum CustomError {
     #[error("Invalid argument: {0}")]
     InvalidArgument(String),
