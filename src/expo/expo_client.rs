@@ -1,5 +1,3 @@
-mod post;
-
 use std::collections::HashMap;
 
 use reqwest::{
@@ -15,7 +13,10 @@ use crate::{
     ExpoPushReceiptId,
 };
 
-use self::post::send_push_notifications;
+#[derive(Debug, PartialEq, serde::Deserialize)]
+struct SendPushNotificationSuccessfulResponse {
+    data: Vec<ExpoPushTicket>,
+}
 
 #[derive(Clone)]
 pub struct Expo {
@@ -48,15 +49,12 @@ impl Expo {
 
     pub async fn send_push_notifications(
         &self,
-        messages: ExpoPushMessage,
+        request: ExpoPushMessage,
     ) -> Result<Vec<ExpoPushTicket>, CustomError> {
-        send_push_notifications(
-            &self.base_url,
-            &self.client,
-            messages,
-            self.access_token.as_deref(),
-        )
-        .await
+        let response: SendPushNotificationSuccessfulResponse = self
+            .send_request(Method::POST, "/--/api/v2/push/send", request)
+            .await?;
+        Ok(response.data)
     }
 
     pub async fn get_push_notification_receipts(
@@ -127,7 +125,7 @@ impl Expo {
 mod tests {
     use std::str::FromStr as _;
 
-    use crate::{Details, DetailsErrorType, ExpoPushErrorReceipt};
+    use crate::{Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushSuccessTicket};
 
     use super::*;
 
@@ -300,6 +298,128 @@ mod tests {
             "Server error: Request failed: 401 Unauthorized"
         );
         mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo {
+            access_token: None,
+            base_url: url,
+            client: reqwest::Client::new(),
+        };
+
+        let response = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await?;
+
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    // TODO: test_send_push_notifications_error_response
+    // TODO: test_send_push_notifications_4xx
+
+    #[test]
+    fn test_successful_response_body() -> anyhow::Result<()> {
+        // <https://docs.expo.dev/push-notifications/sending-notifications/#push-tickets>
+        let response_body = r#"
+{
+  "data": [
+    { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" },
+    { "status": "ok", "id": "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY" },
+    { "status": "ok", "id": "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ" },
+    { "status": "ok", "id": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA" }
+  ]
+}
+"#;
+        let parsed = serde_json::from_str::<SendPushNotificationSuccessfulResponse>(response_body)?;
+        assert_eq!(
+            parsed,
+            SendPushNotificationSuccessfulResponse {
+                data: vec![
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                        id: "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                        id: "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                        id: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string(),
+                    })
+                ]
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_with_device_not_registerd() -> anyhow::Result<()> {
+        // <https://docs.expo.dev/push-notifications/sending-notifications/#push-tickets>
+        let response_body = r#"
+{
+  "data": [
+    {
+      "status": "error",
+      "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+      "details": {
+        "error": "DeviceNotRegistered"
+      }
+    },
+    {
+      "status": "ok",
+      "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    }
+  ]
+}
+"#;
+        let parsed = serde_json::from_str::<SendPushNotificationSuccessfulResponse>(response_body)?;
+        assert_eq!(
+            parsed,
+            SendPushNotificationSuccessfulResponse {
+                data: vec![
+                    ExpoPushTicket::Error(ExpoPushErrorReceipt {
+                        message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
+                        details: Some(Details {
+                            error: Some(DetailsErrorType::DeviceNotRegistered),
+                        })
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                    }),
+                ]
+            }
+        );
         Ok(())
     }
 }
