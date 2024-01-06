@@ -3,16 +3,17 @@ mod response;
 use crate::error::CustomError;
 use crate::expo::expo_client::get::response::GetPushNotificationReceiptsResponse;
 use crate::object::{
-    Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushReceiptId, ExpoPushSuccessReceipt,
+    Details, ExpoPushErrorReceipt, ExpoPushReceipt, ExpoPushSuccessReceipt,
+    GetPushNotificationReceiptsRequest,
 };
-use crate::DetailsErrorType;
+use crate::{DetailsErrorType, ExpoPushReceiptId};
 use reqwest::header::AUTHORIZATION;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use std::collections::HashMap;
 
 pub(crate) async fn get_push_notification_receipts(
     client: &reqwest::Client,
-    push_ids: ExpoPushReceiptId,
+    push_ids: GetPushNotificationReceiptsRequest,
     access_token: Option<&str>,
 ) -> Result<Vec<ExpoPushReceipt>, CustomError> {
     const URL: &str = "https://exp.host/--/api/v2/push/getReceipts";
@@ -49,7 +50,10 @@ pub(crate) async fn get_push_notification_receipts(
                     match item {
                         response::GetPushNotificationReceiptsResponseDataItem::Ok => {
                             let mut map = HashMap::new();
-                            map.insert(id.clone(), ExpoPushSuccessReceipt);
+                            map.insert(
+                                ExpoPushReceiptId::try_from(id).expect("id must be String"),
+                                ExpoPushSuccessReceipt,
+                            );
                             receipts.push(ExpoPushReceipt::Success(map));
                         }
                         response::GetPushNotificationReceiptsResponseDataItem::Error {
