@@ -46,7 +46,7 @@ pub(crate) async fn send_push_notifications(
                     .into_iter()
                     .map(|item| match item {
                         response::SendPushNotificationResponseDataItem::Ok { id } => {
-                            ExpoPushTicket::Success(ExpoPushSuccessTicket { id })
+                            ExpoPushTicket::Ok(ExpoPushSuccessTicket { id })
                         }
                         response::SendPushNotificationResponseDataItem::Error {
                             message,
@@ -103,7 +103,7 @@ mod tests {
 
         assert_eq!(
             response,
-            vec![ExpoPushTicket::Success(ExpoPushSuccessTicket {
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                 id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()
             })]
         );
