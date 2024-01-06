@@ -5,8 +5,7 @@ use response::SendPushNotificationResponse;
 
 use crate::{
     error::CustomError,
-    object::{ExpoPushMessage, ExpoPushSuccessTicket, ExpoPushTicket},
-    ExpoPushErrorReceipt,
+    object::{ExpoPushMessage, ExpoPushTicket},
 };
 
 pub(crate) async fn send_push_notifications(
@@ -42,18 +41,7 @@ pub(crate) async fn send_push_notifications(
                             err
                         ))
                     })?
-                    .data
-                    .into_iter()
-                    .map(|item| match item {
-                        response::SendPushNotificationResponseDataItem::Ok { id } => {
-                            ExpoPushTicket::Ok(ExpoPushSuccessTicket { id })
-                        }
-                        response::SendPushNotificationResponseDataItem::Error {
-                            message,
-                            details,
-                        } => ExpoPushTicket::Error(ExpoPushErrorReceipt { message, details }),
-                    })
-                    .collect())
+                    .data)
             } else {
                 Err(CustomError::ServerErr(format!(
                     "Failed to send request: {:?} ===> 1",
@@ -70,6 +58,8 @@ pub(crate) async fn send_push_notifications(
 
 #[cfg(test)]
 mod tests {
+    use crate::ExpoPushSuccessTicket;
+
     use super::*;
 
     #[tokio::test]

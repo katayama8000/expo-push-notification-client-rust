@@ -1,25 +1,13 @@
-use crate::Details;
+use crate::ExpoPushTicket;
 
 #[derive(Debug, PartialEq, Eq, serde::Deserialize)]
 pub(super) struct SendPushNotificationResponse {
-    pub data: Vec<SendPushNotificationResponseDataItem>,
-}
-
-#[derive(Debug, PartialEq, Eq, serde::Deserialize)]
-#[serde(rename_all = "lowercase", tag = "status")]
-pub(super) enum SendPushNotificationResponseDataItem {
-    Ok {
-        id: String,
-    },
-    Error {
-        message: String,
-        details: Option<Details>,
-    },
+    pub data: Vec<ExpoPushTicket>,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::DetailsErrorType;
+    use crate::{Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushSuccessTicket};
 
     use super::*;
 
@@ -41,18 +29,18 @@ mod tests {
             parsed,
             SendPushNotificationResponse {
                 data: vec![
-                    SendPushNotificationResponseDataItem::Ok {
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                         id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-                    },
-                    SendPushNotificationResponseDataItem::Ok {
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                         id: "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
-                    },
-                    SendPushNotificationResponseDataItem::Ok {
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                         id: "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
-                    },
-                    SendPushNotificationResponseDataItem::Ok {
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                         id: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string(),
-                    }
+                    })
                 ]
             }
         );
@@ -84,15 +72,15 @@ mod tests {
             parsed,
             SendPushNotificationResponse {
                 data: vec![
-                    SendPushNotificationResponseDataItem::Error {
+                    ExpoPushTicket::Error(ExpoPushErrorReceipt {
                         message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
                         details: Some(Details {
                             error: Some(DetailsErrorType::DeviceNotRegistered),
                         })
-                    },
-                    SendPushNotificationResponseDataItem::Ok {
+                    }),
+                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                         id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-                    },
+                    }),
                 ]
             }
         );
