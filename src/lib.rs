@@ -1,11 +1,11 @@
 mod error;
-mod expo;
+mod expo_client;
 mod object;
 
 pub use error::{CustomError, ValidationError};
-pub use expo::expo_client::{Expo, ExpoClientOptions};
+pub use expo_client::{Expo, ExpoClientOptions};
 pub use object::{
-    Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushErrorTicket, ExpoPushMessage,
-    ExpoPushMessageBuilder, ExpoPushReceipt, ExpoPushReceiptId, ExpoPushSuccessTicket,
-    ExpoPushTicket, GetPushNotificationReceiptsRequest,
+    Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushMessage, ExpoPushMessageBuilder,
+    ExpoPushReceipt, ExpoPushReceiptId, ExpoPushSuccessTicket, ExpoPushTicket,
+    GetPushNotificationReceiptsRequest,
 };
