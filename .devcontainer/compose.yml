@@ -2,7 +2,7 @@ services:
   expo-push-notification-client:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     restart: always
     tty: true
     volumes:
