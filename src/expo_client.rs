@@ -23,16 +23,19 @@ pub struct Expo {
     client: reqwest::Client,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
+    pub base_url: Option<String>,
 }
 
 impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
-        Expo {
+        Self {
             access_token: options.access_token,
-            base_url: "https://exp.host".to_string(),
+            base_url: options
+                .base_url
+                .unwrap_or_else(|| "https://exp.host".to_string()),
             client: reqwest::Client::new(),
         }
     }
@@ -180,11 +183,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
             .get_push_notification_receipts(vec![
@@ -237,11 +239,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
             .get_push_notification_receipts(vec![ExpoPushReceiptId::from_str(
@@ -284,11 +285,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let result = expo
             .get_push_notification_receipts(vec![ExpoPushReceiptId::from_str(
@@ -325,11 +325,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
             .send_push_notifications(
@@ -374,11 +373,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
             .send_push_notifications(
@@ -418,11 +416,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let result = expo
             .send_push_notifications(

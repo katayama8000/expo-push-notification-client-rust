@@ -5,7 +5,7 @@ use expo_push_notification_client::{
 #[ignore = "avoid calling the expo api"]
 #[tokio::test]
 async fn test() -> anyhow::Result<()> {
-    let expo = Expo::new(ExpoClientOptions { access_token: None });
+    let expo = Expo::new(ExpoClientOptions::default());
 
     let tokens = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"];
     let tickets = expo
