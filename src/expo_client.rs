@@ -7,9 +7,7 @@ use reqwest::{
 
 use crate::{
     error::CustomError,
-    object::{
-        ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket, GetPushNotificationReceiptsRequest,
-    },
+    object::{ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket},
     ExpoPushReceiptId,
 };
 
@@ -59,12 +57,17 @@ impl Expo {
 
     pub async fn get_push_notification_receipts(
         &self,
-        request: GetPushNotificationReceiptsRequest,
+        ids: Vec<ExpoPushReceiptId>,
     ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError> {
+        #[derive(Debug, PartialEq, serde::Serialize)]
+        struct GetPushNotificationReceiptsRequest {
+            ids: Vec<ExpoPushReceiptId>,
+        }
         #[derive(Debug, PartialEq, serde::Deserialize)]
         struct GetPushNotificationReceiptsSuccessfulResponse {
             data: HashMap<ExpoPushReceiptId, ExpoPushReceipt>,
         }
+        let request = GetPushNotificationReceiptsRequest { ids };
         let response: GetPushNotificationReceiptsSuccessfulResponse = self
             .send_request(Method::POST, "/--/api/v2/push/getReceipts", request)
             .await?;
@@ -184,11 +187,11 @@ mod tests {
         };
 
         let response = expo
-            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
+            .get_push_notification_receipts(vec![
                 ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
                 ExpoPushReceiptId::from_str("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY")?,
                 ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
-            ]))
+            ])
             .await?;
 
         assert_eq!(response, {
@@ -241,9 +244,9 @@ mod tests {
         };
 
         let response = expo
-            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-            ]))
+            .get_push_notification_receipts(vec![ExpoPushReceiptId::from_str(
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+            )?])
             .await?;
 
         assert_eq!(response, {
@@ -288,9 +291,9 @@ mod tests {
         };
 
         let result = expo
-            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-            ]))
+            .get_push_notification_receipts(vec![ExpoPushReceiptId::from_str(
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+            )?])
             .await;
         assert!(result.is_err());
         assert_eq!(

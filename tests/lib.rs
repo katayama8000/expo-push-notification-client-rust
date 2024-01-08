@@ -1,6 +1,5 @@
 use expo_push_notification_client::{
     Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket,
-    GetPushNotificationReceiptsRequest,
 };
 
 #[ignore = "avoid calling the expo api"]
@@ -26,9 +25,7 @@ async fn test() -> anyhow::Result<()> {
         }
     }
 
-    let receipts = expo
-        .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(ids.clone()))
-        .await?;
+    let receipts = expo.get_push_notification_receipts(ids.clone()).await?;
 
     for id in ids {
         match receipts.get(&id) {
