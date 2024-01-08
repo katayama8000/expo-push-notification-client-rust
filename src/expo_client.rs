@@ -58,10 +58,56 @@ impl Expo {
         Ok(response.data)
     }
 
-    pub async fn get_push_notification_receipts(
+    /// Get push notification receipts
+    ///
+    ///  <https://docs.expo.dev/push-notifications/sending-notifications/#push-receipts>
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
+    /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushReceipt, ExpoPushReceiptId};
+    /// #
+    /// #     let mut server = mockito::Server::new();
+    /// #     let url = server.url();
+    /// #     let mock = server
+    /// #         .mock("POST", "/--/api/v2/push/getReceipts")
+    /// #         .match_header("content-type", "application/json")
+    /// #         .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+    /// #         .with_status(200)
+    /// #         .with_header("content-type", "application/json; charset=utf-8")
+    /// #         .with_body(r#"
+    /// # {
+    /// #   "data": {
+    /// #       "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" },
+    /// #   }
+    /// # }
+    /// # "#,
+    /// #         )
+    /// #         .create();
+    /// #     let expo = Expo::new(ExpoClientOptions { base_url: Some(url), ..Default::default() });
+    /// let receipt_ids = expo.get_push_notification_receipts([
+    ///     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    /// ]).await?;
+    /// assert!(receipt_ids.contains_key(
+    ///     &ExpoPushReceiptId::try_from("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+    /// ));
+    ///
+    /// let _ = expo.get_push_notification_receipts(vec![
+    ///     ExpoPushReceiptId::try_from("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+    /// ]).await?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub async fn get_push_notification_receipts<I, T, E>(
         &self,
-        ids: Vec<ExpoPushReceiptId>,
-    ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError> {
+        ids: I,
+    ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError>
+    where
+        I: IntoIterator<Item = T>,
+        T: TryInto<ExpoPushReceiptId, Error = E>,
+        E: Into<CustomError>,
+    {
         #[derive(Debug, PartialEq, serde::Serialize)]
         struct GetPushNotificationReceiptsRequest {
             ids: Vec<ExpoPushReceiptId>,
@@ -70,6 +116,10 @@ impl Expo {
         struct GetPushNotificationReceiptsSuccessfulResponse {
             data: HashMap<ExpoPushReceiptId, ExpoPushReceipt>,
         }
+        let ids = ids
+            .into_iter()
+            .map(|id| id.try_into().map_err(|e| e.into()))
+            .collect::<Result<Vec<ExpoPushReceiptId>, CustomError>>()?;
         let request = GetPushNotificationReceiptsRequest { ids };
         let response: GetPushNotificationReceiptsSuccessfulResponse = self
             .send_request(Method::POST, "/--/api/v2/push/getReceipts", request)
@@ -189,10 +239,10 @@ mod tests {
         });
 
         let response = expo
-            .get_push_notification_receipts(vec![
-                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-                ExpoPushReceiptId::from_str("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY")?,
-                ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
+            .get_push_notification_receipts([
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY",
+                "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ",
             ])
             .await?;
 
@@ -245,9 +295,7 @@ mod tests {
         });
 
         let response = expo
-            .get_push_notification_receipts(vec![ExpoPushReceiptId::from_str(
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-            )?])
+            .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
             .await?;
 
         assert_eq!(response, {
@@ -291,9 +339,7 @@ mod tests {
         });
 
         let result = expo
-            .get_push_notification_receipts(vec![ExpoPushReceiptId::from_str(
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-            )?])
+            .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
             .await;
         assert!(result.is_err());
         assert_eq!(
