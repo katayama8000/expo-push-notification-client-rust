@@ -10,6 +10,12 @@ pub enum CustomError {
     ServerErr(String),
 }
 
+impl std::convert::From<std::convert::Infallible> for CustomError {
+    fn from(_: std::convert::Infallible) -> Self {
+        unreachable!()
+    }
+}
+
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum ValidationError {
     #[error("Invalid token")]

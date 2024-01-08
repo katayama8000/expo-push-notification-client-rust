@@ -9,6 +9,14 @@ impl std::convert::From<ExpoPushReceiptId> for String {
     }
 }
 
+impl std::convert::TryFrom<&str> for ExpoPushReceiptId {
+    type Error = crate::CustomError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Ok(Self(s.to_string()))
+    }
+}
+
 impl std::convert::TryFrom<String> for ExpoPushReceiptId {
     type Error = crate::CustomError;
 
@@ -27,7 +35,7 @@ impl std::str::FromStr for ExpoPushReceiptId {
     type Err = crate::CustomError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::try_from(s.to_string())
+        Self::try_from(s)
     }
 }
 

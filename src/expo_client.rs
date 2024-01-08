@@ -7,9 +7,7 @@ use reqwest::{
 
 use crate::{
     error::CustomError,
-    object::{
-        ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket, GetPushNotificationReceiptsRequest,
-    },
+    object::{ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket},
     ExpoPushReceiptId,
 };
 
@@ -25,16 +23,19 @@ pub struct Expo {
     client: reqwest::Client,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
+    pub base_url: Option<String>,
 }
 
 impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
-        Expo {
+        Self {
             access_token: options.access_token,
-            base_url: "https://exp.host".to_string(),
+            base_url: options
+                .base_url
+                .unwrap_or_else(|| "https://exp.host".to_string()),
             client: reqwest::Client::new(),
         }
     }
@@ -57,14 +58,69 @@ impl Expo {
         Ok(response.data)
     }
 
-    pub async fn get_push_notification_receipts(
+    /// Get push notification receipts
+    ///
+    ///  <https://docs.expo.dev/push-notifications/sending-notifications/#push-receipts>
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
+    /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushReceipt, ExpoPushReceiptId};
+    /// #
+    /// #     let mut server = mockito::Server::new();
+    /// #     let url = server.url();
+    /// #     let mock = server
+    /// #         .mock("POST", "/--/api/v2/push/getReceipts")
+    /// #         .match_header("content-type", "application/json")
+    /// #         .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+    /// #         .with_status(200)
+    /// #         .with_header("content-type", "application/json; charset=utf-8")
+    /// #         .with_body(r#"
+    /// # {
+    /// #   "data": {
+    /// #       "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" },
+    /// #   }
+    /// # }
+    /// # "#,
+    /// #         )
+    /// #         .create();
+    /// #     let expo = Expo::new(ExpoClientOptions { base_url: Some(url), ..Default::default() });
+    /// let receipt_ids = expo.get_push_notification_receipts([
+    ///     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+    /// ]).await?;
+    /// assert!(receipt_ids.contains_key(
+    ///     &ExpoPushReceiptId::try_from("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+    /// ));
+    ///
+    /// let _ = expo.get_push_notification_receipts(vec![
+    ///     ExpoPushReceiptId::try_from("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+    /// ]).await?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub async fn get_push_notification_receipts<I, T, E>(
         &self,
-        request: GetPushNotificationReceiptsRequest,
-    ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError> {
+        ids: I,
+    ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError>
+    where
+        I: IntoIterator<Item = T>,
+        T: TryInto<ExpoPushReceiptId, Error = E>,
+        E: Into<CustomError>,
+    {
+        #[derive(Debug, PartialEq, serde::Serialize)]
+        struct GetPushNotificationReceiptsRequest {
+            ids: Vec<ExpoPushReceiptId>,
+        }
         #[derive(Debug, PartialEq, serde::Deserialize)]
         struct GetPushNotificationReceiptsSuccessfulResponse {
             data: HashMap<ExpoPushReceiptId, ExpoPushReceipt>,
         }
+        let ids = ids
+            .into_iter()
+            .map(|id| id.try_into().map_err(|e| e.into()))
+            .collect::<Result<Vec<ExpoPushReceiptId>, CustomError>>()?;
+        let request = GetPushNotificationReceiptsRequest { ids };
         let response: GetPushNotificationReceiptsSuccessfulResponse = self
             .send_request(Method::POST, "/--/api/v2/push/getReceipts", request)
             .await?;
@@ -177,18 +233,17 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
-            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-                "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
-                "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
-            ]))
+            .get_push_notification_receipts([
+                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY",
+                "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ",
+            ])
             .await?;
 
         assert_eq!(response, {
@@ -234,16 +289,13 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
-            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-            ]))
+            .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
             .await?;
 
         assert_eq!(response, {
@@ -281,16 +333,13 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let result = expo
-            .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-            ]))
+            .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
             .await;
         assert!(result.is_err());
         assert_eq!(
@@ -322,11 +371,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
             .send_push_notifications(
@@ -337,7 +385,7 @@ mod tests {
         assert_eq!(
             response,
             vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
             })]
         );
         mock.assert();
@@ -371,11 +419,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let response = expo
             .send_push_notifications(
@@ -415,11 +462,10 @@ mod tests {
             )
             .create();
 
-        let expo = Expo {
-            access_token: None,
-            base_url: url,
-            client: reqwest::Client::new(),
-        };
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
 
         let result = expo
             .send_push_notifications(
@@ -454,16 +500,16 @@ mod tests {
             SendPushNotificationSuccessfulResponse {
                 data: vec![
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                        id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
+                        id: ExpoPushReceiptId::from_str("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY")?
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
+                        id: ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string(),
+                        id: ExpoPushReceiptId::from_str("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")?,
                     })
                 ]
             }
@@ -503,7 +549,7 @@ mod tests {
                         })
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                        id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
                     }),
                 ]
             }
