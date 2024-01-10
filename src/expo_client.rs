@@ -185,9 +185,9 @@ mod tests {
 
         let response = expo
             .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
-                "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
-                "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                ExpoPushReceiptId::from_str("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY")?,
+                ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
             ]))
             .await?;
 
@@ -242,7 +242,7 @@ mod tests {
 
         let response = expo
             .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
             ]))
             .await?;
 
@@ -289,7 +289,7 @@ mod tests {
 
         let result = expo
             .get_push_notification_receipts(GetPushNotificationReceiptsRequest::new(vec![
-                "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
             ]))
             .await;
         assert!(result.is_err());
@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(
             response,
             vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string()
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
             })]
         );
         mock.assert();
@@ -454,16 +454,16 @@ mod tests {
             SendPushNotificationSuccessfulResponse {
                 data: vec![
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                        id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY".to_string(),
+                        id: ExpoPushReceiptId::from_str("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY")?
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ".to_string(),
+                        id: ExpoPushReceiptId::from_str("ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ")?,
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA".to_string(),
+                        id: ExpoPushReceiptId::from_str("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")?,
                     })
                 ]
             }
@@ -503,7 +503,7 @@ mod tests {
                         })
                     }),
                     ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".to_string(),
+                        id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
                     }),
                 ]
             }
