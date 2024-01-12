@@ -99,14 +99,14 @@ impl Expo {
     /// #     Ok(())
     /// # }
     /// ```
-    pub async fn get_push_notification_receipts<I, T, E>(
+    pub async fn get_push_notification_receipts<I>(
         &self,
         ids: I,
     ) -> Result<HashMap<ExpoPushReceiptId, ExpoPushReceipt>, CustomError>
     where
-        I: IntoIterator<Item = T>,
-        T: TryInto<ExpoPushReceiptId, Error = E>,
-        E: Into<CustomError>,
+        I: IntoIterator,
+        <I as IntoIterator>::Item: TryInto<ExpoPushReceiptId>,
+        <<I as IntoIterator>::Item as TryInto<ExpoPushReceiptId>>::Error: Into<CustomError>,
     {
         #[derive(Debug, PartialEq, serde::Serialize)]
         struct GetPushNotificationReceiptsRequest {
