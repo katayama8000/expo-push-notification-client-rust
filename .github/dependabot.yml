@@ -4,5 +4,11 @@ updates:
     directory: /
     schedule:
       day: tuesday
-      interval: weekly
+      interval: dayly
+      time: "15:00"
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      day: tuesday
+      interval: dayly
       time: "15:00"
