@@ -7,7 +7,7 @@ use reqwest::{
 
 use crate::{
     error::CustomError,
-    object::{ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket},
+    object::{ExpoPushReceipt, ExpoPushTicket, TryIntoSendPushNotificationsRequest},
     ExpoPushReceiptId,
 };
 
@@ -48,10 +48,63 @@ impl Expo {
                 .is_match(token)
     }
 
-    pub async fn send_push_notifications(
+    /// Send push notifications
+    ///
+    /// <https://docs.expo.dev/push-notifications/sending-notifications/#push-tickets>
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # async fn test_send_push_notifications() -> anyhow::Result<()> {
+    /// #     use std::str::FromStr as _;
+    /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceiptId, ExpoPushSuccessTicket, ExpoPushTicket};
+    /// #     let mut server = mockito::Server::new();
+    /// #     let url = server.url();
+    /// #     let mock = server
+    /// #         .mock("POST", "/--/api/v2/push/send")
+    /// #         .match_header("content-type", "application/json")
+    /// #         .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+    /// #         .with_status(200)
+    /// #         .with_header("content-type", "application/json; charset=utf-8")
+    /// #         .with_body(
+    /// #             r#"
+    /// # {
+    /// #     "data": [
+    /// #         { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    /// #     ]
+    /// # }
+    /// # "#,
+    /// #         )
+    /// #         .create();
+    /// #     let expo = Expo::new(ExpoClientOptions {
+    /// #         base_url: Some(url),
+    /// #         ..Default::default()
+    /// #     });
+    /// #
+    /// let response = expo
+    ///     .send_push_notifications(
+    ///         ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+    ///     )
+    ///     .await?;
+    ///
+    /// assert_eq!(
+    ///     response,
+    ///     vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+    ///         id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+    ///     })]
+    /// );
+    /// #     mock.assert();
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub async fn send_push_notifications<R>(
         &self,
-        request: ExpoPushMessage,
-    ) -> Result<Vec<ExpoPushTicket>, CustomError> {
+        request: R,
+    ) -> Result<Vec<ExpoPushTicket>, CustomError>
+    where
+        R: TryIntoSendPushNotificationsRequest,
+    {
+        let request = request.try_into_send_push_notifications_request()?;
         let response: SendPushNotificationSuccessfulResponse = self
             .send_request(Method::POST, "/--/api/v2/push/send", request)
             .await?;
@@ -181,7 +234,9 @@ impl Expo {
 mod tests {
     use std::str::FromStr as _;
 
-    use crate::{Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushSuccessTicket};
+    use crate::{
+        Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushMessage, ExpoPushSuccessTicket,
+    };
 
     use super::*;
 
@@ -387,6 +442,55 @@ mod tests {
             vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
                 id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
             })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_multiple_messages() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("content-type", "application/json")
+            .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]},{"to":["ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]"]}]"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" },
+        { "status": "ok", "id": "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
+
+        let response = expo
+            .send_push_notifications([
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+                ExpoPushMessage::builder(["ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]"]).build()?,
+            ])
+            .await?;
+
+        assert_eq!(
+            response,
+            vec![
+                ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                    id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+                }),
+                ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                    id: ExpoPushReceiptId::from_str("YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY")?
+                })
+            ]
         );
         mock.assert();
         Ok(())
