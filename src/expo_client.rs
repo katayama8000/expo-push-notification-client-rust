@@ -36,7 +36,10 @@ impl Expo {
             base_url: options
                 .base_url
                 .unwrap_or_else(|| "https://exp.host".to_string()),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .gzip(true)
+                .build()
+                .expect("Client::new()"),
         }
     }
 
@@ -62,6 +65,7 @@ impl Expo {
     /// #     let url = server.url();
     /// #     let mock = server
     /// #         .mock("POST", "/--/api/v2/push/send")
+    /// #         .match_header("accept-encoding", "gzip")
     /// #         .match_header("content-type", "application/json")
     /// #         .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
     /// #         .with_status(200)
@@ -125,6 +129,7 @@ impl Expo {
     /// #     let url = server.url();
     /// #     let mock = server
     /// #         .mock("POST", "/--/api/v2/push/getReceipts")
+    /// #         .match_header("accept-encoding", "gzip")
     /// #         .match_header("content-type", "application/json")
     /// #         .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
     /// #         .with_status(200)
@@ -272,6 +277,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX","YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY","ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ"]}"#)
             .with_status(200)
@@ -313,6 +319,7 @@ mod tests {
             );
             map
         });
+        println!("{:?}", mock);
         mock.assert();
         Ok(())
     }
@@ -323,6 +330,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
             .with_status(200)
@@ -374,6 +382,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
             .with_status(401)
@@ -411,6 +420,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
             .with_status(200)
@@ -453,6 +463,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]},{"to":["ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]"]}]"#)
             .with_status(200)
@@ -502,6 +513,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
             .with_status(200)
@@ -552,6 +564,7 @@ mod tests {
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
+            .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
             .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
             .with_status(401)
