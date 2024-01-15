@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
+use async_compression::tokio::write::GzipEncoder;
 use reqwest::{
-    header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE},
+    header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE},
     Method,
 };
+use tokio::io::AsyncWriteExt;
 
 use crate::{
     error::CustomError,
@@ -185,6 +187,13 @@ impl Expo {
         Ok(response.data)
     }
 
+    async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
+        let mut encoder = GzipEncoder::new(vec![]);
+        encoder.write_all(src).await?;
+        encoder.shutdown().await?;
+        Ok(encoder.into_inner())
+    }
+
     async fn send_request<S, T>(
         &self,
         method: Method,
@@ -208,10 +217,21 @@ impl Expo {
             );
         }
 
+        let body =
+            serde_json::to_vec(&body).map_err(|e| CustomError::SerializeErr(e.to_string()))?;
+        let body = if body.len() > 1024 {
+            headers.insert(CONTENT_ENCODING, HeaderValue::from_static("gzip"));
+            Self::gzip(&body)
+                .await
+                .map_err(|e| CustomError::GzipErr(e.to_string()))
+        } else {
+            Ok(body)
+        }?;
+
         match client
             .request(method, format!("{}{}", base_url, path))
             .headers(headers)
-            .json(&body)
+            .body(body)
             .send()
             .await
         {
@@ -319,7 +339,6 @@ mod tests {
             );
             map
         });
-        println!("{:?}", mock);
         mock.assert();
         Ok(())
     }
@@ -410,6 +429,105 @@ mod tests {
             result.unwrap_err().to_string(),
             "Server error: Request failed: 401 Unauthorized"
         );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_push_notification_gzip_len_lte_1024() -> anyhow::Result<()> {
+        let ids = ["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"].repeat(26);
+        let request = serde_json::json!({ "ids": ids });
+        let request = serde_json::to_vec(&request)?;
+        assert_eq!(request.len(), 1023);
+
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(request)
+            .with_status(200)
+            .with_header("content-encoding", "gzip")
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                gzip(
+                    r#"
+{
+    "data": {
+        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+    }
+}
+"#
+                    .as_bytes(),
+                )
+                .await?,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
+        let receipts = expo.get_push_notification_receipts(ids).await?;
+        assert_eq!(receipts, {
+            let mut map = HashMap::new();
+            map.insert(
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                ExpoPushReceipt::Ok,
+            );
+            map
+        });
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_push_notification_gzip_len_gt_1024() -> anyhow::Result<()> {
+        let ids = ["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"].repeat(27);
+        let request = serde_json::json!({ "ids": ids });
+        let request = serde_json::to_vec(&request)?;
+        assert_eq!(request.len(), 1062);
+
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(gzip(&request).await?)
+            .with_status(200)
+            .with_header("content-encoding", "gzip")
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                gzip(
+                    r#"
+{
+    "data": {
+        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+    }
+}
+"#
+                    .as_bytes(),
+                )
+                .await?,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
+        let receipts = expo.get_push_notification_receipts(ids).await?;
+        assert_eq!(receipts, {
+            let mut map = HashMap::new();
+            map.insert(
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                ExpoPushReceipt::Ok,
+            );
+            map
+        });
         mock.assert();
         Ok(())
     }
@@ -672,5 +790,109 @@ mod tests {
             }
         );
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_gzip_len_gt_1024() -> anyhow::Result<()> {
+        let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(24);
+        let request = serde_json::json!({ "to": to });
+        let request = serde_json::to_vec(&request)?;
+        assert_eq!(request.len(), 1064);
+
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(gzip(&request).await?)
+            .with_status(200)
+            .with_header("content-encoding", "gzip")
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                gzip(
+                    r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#
+                    .as_bytes(),
+                )
+                .await?,
+            )
+            .create();
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
+        let response = expo
+            .send_push_notifications(ExpoPushMessage::builder(to).build()?)
+            .await?;
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_gzip_len_lte_1024() -> anyhow::Result<()> {
+        let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(23);
+        let request = serde_json::json!({ "to": to });
+        let request = serde_json::to_vec(&request)?;
+        assert_eq!(request.len(), 1020);
+
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(request)
+            .with_status(200)
+            .with_header("content-encoding", "gzip")
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                gzip(
+                    r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#
+                    .as_bytes(),
+                )
+                .await?,
+            )
+            .create();
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            ..Default::default()
+        });
+        let response = expo
+            .send_push_notifications(ExpoPushMessage::builder(to).build()?)
+            .await?;
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
+        let mut encoder = GzipEncoder::new(vec![]);
+        tokio::io::AsyncWriteExt::write_all(&mut encoder, src).await?;
+        tokio::io::AsyncWriteExt::shutdown(&mut encoder).await?;
+        Ok(encoder.into_inner())
     }
 }
