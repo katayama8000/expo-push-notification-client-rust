@@ -2,10 +2,14 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq, thiserror::Error, Eq, Hash)]
 pub enum CustomError {
+    #[error("Gzip error: {0}")]
+    GzipErr(String),
     #[error("Invalid argument: {0}")]
     InvalidArgument(String),
     #[error("Deserialize error: {0}")]
     DeserializeErr(String),
+    #[error("Serialize error: {0}")]
+    SerializeErr(String),
     #[error("Server error: {0}")]
     ServerErr(String),
 }
