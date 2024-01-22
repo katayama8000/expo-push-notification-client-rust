@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
@@ -38,7 +39,7 @@ pub struct ExpoPushMessageBuilder {
     to: Vec<String>,
     title: Option<String>,
     body: Option<String>,
-    data: Option<HashMap<String, Vec<String>>>,
+    data: Option<Value>,
     ttl: Option<u64>,
     expiration: Option<u64>,
     priority: Option<String>,
@@ -77,8 +78,11 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn data(mut self, data: HashMap<String, Vec<String>>) -> Self {
-        self.data = Some(data);
+    pub fn data<T>(mut self, data: &T) -> Self
+    where
+        T: Serialize,
+    {
+        self.data = Some(serde_json::to_value(data));
         self
     }
 
