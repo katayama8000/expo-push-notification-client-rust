@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
 
-use crate::{error::ValidationError, CustomError};
+use crate::error::ValidationError;
 
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
@@ -77,7 +77,7 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn data<T>(mut self, data: &T) -> Result<Self, CustomError>
+    pub fn data<T>(mut self, data: &T) -> Result<Self, ValidationError>
     where
         T: Serialize,
     {
@@ -86,7 +86,7 @@ impl ExpoPushMessageBuilder {
                 self.data = Some(value);
                 Ok(self)
             }
-            Err(_) => Err(CustomError::SerializeErr("data".to_string())),
+            Err(_) => Err(ValidationError::InvalidData),
         }
     }
 
@@ -224,8 +224,7 @@ mod tests {
             "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         ])
         .body("body")
-        .data(&[("data".to_string())])
-        .expect("data is valid")
+        .data(&[("data".to_string())])?
         .ttl(100)
         .expiration(100)
         .priority("high")

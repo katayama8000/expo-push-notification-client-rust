@@ -22,6 +22,8 @@ impl std::convert::From<std::convert::Infallible> for CustomError {
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum ValidationError {
+    #[error("Invalid data")]
+    InvalidData,
     #[error("Invalid token")]
     InvalidToken,
     #[error("Invalid priority")]
