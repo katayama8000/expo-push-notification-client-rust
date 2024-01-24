@@ -2,10 +2,10 @@
 
 This is a Expo Push Notification Client for Rust. There is [Expo Server SDK](https://github.com/expo/expo-server-sdk-rust) maintained by community but it is not maintained since 2019.
 
-[![ci](https://github.com/katayama8000/expo-push-notification-client-rust/workflows/ci/badge.svg)](https://github.com/katayama8000/expo-push-notification-client-rust/actions)
-[![crates.io](https://img.shields.io/crates/v/expo_push_notification_client)](https://crates.io/crates/expo_push_notification_client)
-[![docs.rs](https://img.shields.io/docsrs/expo_push_notification_client)](https://docs.rs/expo_push_notification_client)
-[![license](https://img.shields.io/crates/l/expo_push_notification_client)](LICENSE)
+[![ci](https://github.com/katayama8000/expo-server-sdk-rust/workflows/ci/badge.svg)](https://github.com/katayama8000/expo-server-sdk-rust/actions)
+[![crates.io](https://img.shields.io/crates/v/expo-server-sdk)](https://crates.io/crates/expo-server-sdk)
+[![docs.rs](https://img.shields.io/docsrs/expo-server-sdk)](https://docs.rs/expo-server-sdk)
+[![license](https://img.shields.io/crates/l/expo-server-sdk)](LICENSE)
 
 ## client (ReactNative with Expo)
 
@@ -14,16 +14,16 @@ See [Expo Push Notification Docs](https://docs.expo.dev/push-notifications/push-
 
 ## server (Rust)
 
-### install expo_push_notification_client crate
+### install expo_server_sdk crate
 
 ```bash
-cargo add expo_push_notification_client
+cargo add expo_server_sdk
 ```
 
 ### how to use
 
 ```rust
-use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, GetPushNotificationReceiptsRequest};
+use expo_server_sdk::{Expo, ExpoClientOptions, ExpoPushMessage, GetPushNotificationReceiptsRequest};
 
 let expo = Expo::new(ExpoClientOptions {
     access_token: Some(access_token),
