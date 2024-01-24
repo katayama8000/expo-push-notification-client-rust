@@ -1,5 +1,5 @@
 services:
-  expo-server-sdk:
+  expo-push-notification-client:
     build:
       context: .
       dockerfile: Dockerfile
