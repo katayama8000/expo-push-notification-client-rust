@@ -62,7 +62,7 @@ impl Expo {
     /// ```rust
     /// # async fn test_send_push_notifications() -> anyhow::Result<()> {
     /// #     use std::str::FromStr as _;
-    /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceiptId, ExpoPushSuccessTicket, ExpoPushTicket};
+    /// #     use expo_server_sdk::{Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceiptId, ExpoPushSuccessTicket, ExpoPushTicket};
     /// #     let mut server = mockito::Server::new();
     /// #     let url = server.url();
     /// #     let mock = server
@@ -125,7 +125,7 @@ impl Expo {
     ///
     /// ```rust
     /// # async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
-    /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushReceipt, ExpoPushReceiptId};
+    /// #     use expo_server_sdk::{Expo, ExpoClientOptions, ExpoPushReceipt, ExpoPushReceiptId};
     /// #
     /// #     let mut server = mockito::Server::new();
     /// #     let url = server.url();

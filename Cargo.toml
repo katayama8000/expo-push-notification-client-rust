@@ -1,14 +1,14 @@
 [package]
-name = "expo_push_notification_client"
+name = "expo_server_sdk"
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
 authors = ["katayama8000 <https://github.com/katayama8000>"]
-description = "Expo Push Notification Client for Rust"
+description = "Expo Server SDK for Rust"
 license = "MIT"
-repository = "https://github.com/katayama8000/expo-push-notification-client"
-homepage = "https://github.com/katayama8000/expo-push-notification-client/blob/main/README.md"
-keywords = ["expo", "web"]
+repository = "https://github.com/katayama8000/expo-server-sdk"
+homepage = "https://github.com/katayama8000/expo-server-sdk/blob/main/README.md"
+keywords = ["expo"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
