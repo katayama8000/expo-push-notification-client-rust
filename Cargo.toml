@@ -1,6 +1,6 @@
 [package]
 name = "expo_server_sdk"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 readme = "README.md"
 authors = ["katayama8000 <https://github.com/katayama8000>"]
