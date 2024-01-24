@@ -1,4 +1,6 @@
-use expo_server_sdk::{Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket};
+use expo_push_notification_client::{
+    Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket,
+};
 
 #[ignore = "avoid calling the expo api"]
 #[tokio::test]

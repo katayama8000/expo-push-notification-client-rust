@@ -2,7 +2,7 @@
   "dockerComposeFile": [
     "compose.yml"
   ],
-  "service": "expo-server-sdk",
+  "service": "expo-push-notification-client",
   "workspaceFolder": "/workspace",
   "customizations": {
     "vscode": {
