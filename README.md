@@ -7,12 +7,12 @@ This is a Expo Server SDK for Rust. There is a [Expo Server SDK](https://github.
 [![docs.rs](https://img.shields.io/docsrs/expo-server-sdk)](https://docs.rs/expo-server-sdk)
 [![license](https://img.shields.io/crates/l/expo-server-sdk)](LICENSE)
 
-## client (ReactNative with Expo)
+## Client (ReactNative with Expo)
 
 You need to get Expo Push Token from Expo SDK and send it to Expo server first.
 See [Expo Push Notification Docs](https://docs.expo.dev/push-notifications/push-notifications-setup/) for more details.
 
-## server (Rust)
+## Server (Rust)
 
 ### install expo_server_sdk crate
 

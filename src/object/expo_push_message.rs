@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use serde_with::skip_serializing_none;
-use std::collections::HashMap;
 
 use crate::error::ValidationError;
 
@@ -11,7 +11,7 @@ pub struct ExpoPushMessage {
     to: Vec<String>,
     title: Option<String>,
     body: Option<String>,
-    data: Option<HashMap<String, Vec<String>>>,
+    data: Option<Value>,
     ttl: Option<u64>,
     expiration: Option<u64>,
     priority: Option<String>,
@@ -38,7 +38,7 @@ pub struct ExpoPushMessageBuilder {
     to: Vec<String>,
     title: Option<String>,
     body: Option<String>,
-    data: Option<HashMap<String, Vec<String>>>,
+    data: Option<Value>,
     ttl: Option<u64>,
     expiration: Option<u64>,
     priority: Option<String>,
@@ -77,9 +77,17 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn data(mut self, data: HashMap<String, Vec<String>>) -> Self {
-        self.data = Some(data);
-        self
+    pub fn data<T>(mut self, data: &T) -> Result<Self, ValidationError>
+    where
+        T: Serialize,
+    {
+        match serde_json::to_value(data) {
+            Ok(value) => {
+                self.data = Some(value);
+                Ok(self)
+            }
+            Err(_) => Err(ValidationError::InvalidData),
+        }
     }
 
     pub fn ttl(mut self, ttl: u64) -> Self {
@@ -216,12 +224,7 @@ mod tests {
             "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         ])
         .body("body")
-        .data(
-            [("key".to_string(), vec!["value".to_string()])]
-                .iter()
-                .cloned()
-                .collect(),
-        )
+        .data(&[("data".to_string())])?
         .ttl(100)
         .expiration(100)
         .priority("high")
@@ -244,12 +247,7 @@ mod tests {
                 ],
                 title: Some("title".to_string()),
                 body: Some("body".to_string()),
-                data: Some(
-                    [("key".to_string(), vec!["value".to_string()])]
-                        .iter()
-                        .cloned()
-                        .collect()
-                ),
+                data: Some(Value::Array(vec![Value::String("data".to_string())])),
                 ttl: Some(100),
                 expiration: Some(100),
                 priority: Some("high".to_string()),
