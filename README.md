@@ -1,6 +1,6 @@
-# Expo Push Notification Client for Rust
+# Expo Server SDK for Rust
 
-This is a Expo Push Notification Client for Rust. There is [Expo Server SDK](https://github.com/expo/expo-server-sdk-rust) maintained by community but it is not maintained since 2019.
+This is a Expo Server SDK for Rust. There is a [Expo Server SDK](https://github.com/expo/expo-server-sdk-rust) maintained by community but it is not maintained since 2019.
 
 [![ci](https://github.com/katayama8000/expo-server-sdk-rust/workflows/ci/badge.svg)](https://github.com/katayama8000/expo-server-sdk-rust/actions)
 [![crates.io](https://img.shields.io/crates/v/expo-server-sdk)](https://crates.io/crates/expo-server-sdk)
