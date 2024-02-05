@@ -14,16 +14,16 @@ categories = ["api-bindings", "web-programming"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-compression = { version = "0.4.5", features = ["gzip", "tokio"] }
-regex = "1.10.2"
-reqwest = { version = "0.11", features = ["json", "gzip"] }
-serde = { version = "1.0.193", features = ["derive"] }
-serde_json = "1.0.108"
-serde_with = "3.4.0"
-thiserror = "1.0.51"
-tokio = { version = "1.35.0", features = ["io-util"] }
+async-compression = { version = "0.4.6", features = ["gzip", "tokio"] }
+regex = "1.10.3"
+reqwest = { version = "0.11.24", features = ["json", "gzip"] }
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = "1.0.113"
+serde_with = "3.6.0"
+thiserror = "1.0.56"
+tokio = { version = "1.36.0", features = ["io-util"] }
 
 [dev-dependencies]
-anyhow = "1.0.77"
+anyhow = "1.0.79"
 mockito = "1.2.0"
-tokio = { version = "1.35.0", features = ["full"] }
+tokio = { version = "1.36.0", features = ["full"] }
