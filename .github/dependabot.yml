@@ -3,12 +3,10 @@ updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
-      day: tuesday
       interval: daily
       time: "15:00"
   - package-ecosystem: docker
-    directory: /
+    directory: /.devcontainer
     schedule:
-      day: tuesday
       interval: daily
       time: "15:00"
