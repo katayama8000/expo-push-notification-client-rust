@@ -1,12 +1,12 @@
 version: 2
 updates:
-  - package-ecosystem: cargo
-    directory: /
+  - package-ecosystem: "cargo"
+    directory: "/"
     schedule:
-      interval: daily
-      time: "15:00"
-  - package-ecosystem: docker
-    directory: /.devcontainer
+      interval: "weekly"
+      timezone: "Asia/Tokyo"
+  - package-ecosystem: "docker"
+    directory: "/.devcontainer"
     schedule:
-      interval: daily
-      time: "15:00"
+      interval: "weekly"
+      timezone: "Asia/Tokyo"
