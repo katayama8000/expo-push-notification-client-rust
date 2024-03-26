@@ -896,6 +896,94 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn test_send_push_notifications_with_new_api() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send?useFcmV1=true")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            use_fcmv1: Some(true),
+            ..Default::default()
+        });
+
+        let response = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await?;
+
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_with_legacy_api() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send?useFcmV1=false")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            use_fcmv1: Some(false),
+            ..Default::default()
+        });
+
+        let response = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await?;
+
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
     async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut encoder = GzipEncoder::new(vec![]);
         tokio::io::AsyncWriteExt::write_all(&mut encoder, src).await?;
