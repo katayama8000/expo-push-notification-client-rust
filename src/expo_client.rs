@@ -23,14 +23,14 @@ pub struct Expo {
     access_token: Option<String>,
     base_url: String,
     client: reqwest::Client,
-    use_fcmv1: Option<bool>,
+    use_fcm_v1: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
     pub base_url: Option<String>,
-    pub use_fcmv1: Option<bool>,
+    pub use_fcm_v1: Option<bool>,
 }
 
 impl Expo {
@@ -44,7 +44,7 @@ impl Expo {
                 .gzip(true)
                 .build()
                 .expect("Client::new()"),
-            use_fcmv1: options.use_fcmv1,
+            use_fcm_v1: options.use_fcm_v1,
         }
     }
 
@@ -114,8 +114,8 @@ impl Expo {
         R: TryIntoSendPushNotificationsRequest,
     {
         let mut path = String::from("/--/api/v2/push/send");
-        if let Some(use_fcmv1) = self.use_fcmv1 {
-            path.push_str(&format!("?useFcmV1={}", use_fcmv1));
+        if let Some(use_fcm_v1) = self.use_fcm_v1 {
+            path.push_str(&format!("?useFcmV1={}", use_fcm_v1));
         }
         let request = request.try_into_send_push_notifications_request()?;
         let response: SendPushNotificationSuccessfulResponse = self
@@ -920,7 +920,7 @@ mod tests {
 
         let expo = Expo::new(ExpoClientOptions {
             base_url: Some(url),
-            use_fcmv1: Some(true),
+            use_fcm_v1: Some(true),
             ..Default::default()
         });
 
@@ -964,7 +964,7 @@ mod tests {
 
         let expo = Expo::new(ExpoClientOptions {
             base_url: Some(url),
-            use_fcmv1: Some(false),
+            use_fcm_v1: Some(false),
             ..Default::default()
         });
 
