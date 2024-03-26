@@ -23,12 +23,14 @@ pub struct Expo {
     access_token: Option<String>,
     base_url: String,
     client: reqwest::Client,
+    use_fcmv1: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
     pub base_url: Option<String>,
+    pub use_fcmv1: Option<bool>,
 }
 
 impl Expo {
@@ -42,6 +44,7 @@ impl Expo {
                 .gzip(true)
                 .build()
                 .expect("Client::new()"),
+            use_fcmv1: options.use_fcmv1,
         }
     }
 
@@ -110,9 +113,13 @@ impl Expo {
     where
         R: TryIntoSendPushNotificationsRequest,
     {
+        let mut path = String::from("/--/api/v2/push/send");
+        if let Some(use_fcmv1) = self.use_fcmv1 {
+            path.push_str(&format!("?useFcmV1={}", use_fcmv1));
+        }
         let request = request.try_into_send_push_notifications_request()?;
         let response: SendPushNotificationSuccessfulResponse = self
-            .send_request(Method::POST, "/--/api/v2/push/send", request)
+            .send_request(Method::POST, path.as_str(), request)
             .await?;
         Ok(response.data)
     }
