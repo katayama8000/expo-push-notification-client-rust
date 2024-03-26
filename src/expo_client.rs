@@ -63,7 +63,7 @@ impl Expo {
     /// # async fn test_send_push_notifications() -> anyhow::Result<()> {
     /// #     use std::str::FromStr as _;
     /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, ExpoPushReceiptId, ExpoPushSuccessTicket, ExpoPushTicket};
-    /// #     let mut server = mockito::Server::new();
+    /// #     let mut server = mockito::Server::new_async().await;;
     /// #     let url = server.url();
     /// #     let mock = server
     /// #         .mock("POST", "/--/api/v2/push/send")
@@ -127,7 +127,7 @@ impl Expo {
     /// # async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
     /// #     use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushReceipt, ExpoPushReceiptId};
     /// #
-    /// #     let mut server = mockito::Server::new();
+    /// #     let mut server = mockito::Server::new_async().await;;
     /// #     let url = server.url();
     /// #     let mock = server
     /// #         .mock("POST", "/--/api/v2/push/getReceipts")
@@ -293,7 +293,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
@@ -345,7 +345,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_push_notification_receipts_error_response() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
@@ -397,7 +397,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_push_notification_receipts_error_response_4xx() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
@@ -440,7 +440,7 @@ mod tests {
         let request = serde_json::to_vec(&request)?;
         assert_eq!(request.len(), 1023);
 
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
@@ -489,7 +489,7 @@ mod tests {
         let request = serde_json::to_vec(&request)?;
         assert_eq!(request.len(), 1062);
 
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
@@ -534,7 +534,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_push_notifications() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
@@ -577,7 +577,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_push_notifications_multiple_messages() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
@@ -627,7 +627,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_push_notifications_error_response() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
@@ -678,7 +678,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_push_notifications_4xx() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
@@ -799,7 +799,7 @@ mod tests {
         let request = serde_json::to_vec(&request)?;
         assert_eq!(request.len(), 1064);
 
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
@@ -848,7 +848,7 @@ mod tests {
         let request = serde_json::to_vec(&request)?;
         assert_eq!(request.len(), 1020);
 
-        let mut server = mockito::Server::new();
+        let mut server = mockito::Server::new_async().await;
         let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")

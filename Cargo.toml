@@ -1,6 +1,6 @@
 [package]
 name = "expo_push_notification_client"
-version = "0.2.3"
+version = "0.2.5"
 edition = "2021"
 readme = "README.md"
 authors = ["katayama8000 <https://github.com/katayama8000>"]
@@ -25,5 +25,5 @@ tokio = { version = "1.36.0", features = ["io-util"] }
 
 [dev-dependencies]
 anyhow = "1.0.79"
-mockito = "1.2.0"
+mockito = "1.4.0"
 tokio = { version = "1.36.0", features = ["full"] }
