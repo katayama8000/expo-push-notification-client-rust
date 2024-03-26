@@ -1,6 +1,6 @@
 [package]
 name = "expo_push_notification_client"
-version = "0.2.6"
+version = "0.3.0"
 edition = "2021"
 readme = "README.md"
 authors = ["katayama8000 <https://github.com/katayama8000>"]
@@ -8,7 +8,7 @@ description = "Expo Push Notification Client for Rust"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/katayama8000/expo-push-notification-client"
 homepage = "https://github.com/katayama8000/expo-push-notification-client/blob/main/README.md"
-keywords = ["expo", "push", "notifications", "react", "native"]
+keywords = ["react", "native", "expo", "push", "notifications"]
 categories = ["api-bindings", "web-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
