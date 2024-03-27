@@ -37,9 +37,7 @@ impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
         Self {
             access_token: options.access_token,
-            base_url: options
-                .base_url
-                .unwrap_or_else(|| "https://exp.host".to_string()),
+            base_url: options.base_url.unwrap_or("https://exp.host".to_string()),
             client: reqwest::Client::builder()
                 .gzip(true)
                 .build()
