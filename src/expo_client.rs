@@ -23,25 +23,26 @@ pub struct Expo {
     access_token: Option<String>,
     base_url: String,
     client: reqwest::Client,
+    use_fcm_v1: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
     pub base_url: Option<String>,
+    pub use_fcm_v1: Option<bool>,
 }
 
 impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
         Self {
             access_token: options.access_token,
-            base_url: options
-                .base_url
-                .unwrap_or_else(|| "https://exp.host".to_string()),
+            base_url: options.base_url.unwrap_or("https://exp.host".to_string()),
             client: reqwest::Client::builder()
                 .gzip(true)
                 .build()
                 .expect("Client::new()"),
+            use_fcm_v1: options.use_fcm_v1,
         }
     }
 
@@ -110,9 +111,13 @@ impl Expo {
     where
         R: TryIntoSendPushNotificationsRequest,
     {
+        let mut path = String::from("/--/api/v2/push/send");
+        if let Some(use_fcm_v1) = self.use_fcm_v1 {
+            path.push_str(&format!("?useFcmV1={}", use_fcm_v1));
+        }
         let request = request.try_into_send_push_notifications_request()?;
         let response: SendPushNotificationSuccessfulResponse = self
-            .send_request(Method::POST, "/--/api/v2/push/send", request)
+            .send_request(Method::POST, path.as_str(), request)
             .await?;
         Ok(response.data)
     }
@@ -879,6 +884,94 @@ mod tests {
         let response = expo
             .send_push_notifications(ExpoPushMessage::builder(to).build()?)
             .await?;
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_with_new_api() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send?useFcmV1=true")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            use_fcm_v1: Some(true),
+            ..Default::default()
+        });
+
+        let response = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await?;
+
+        assert_eq!(
+            response,
+            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
+            })]
+        );
+        mock.assert();
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_push_notifications_with_legacy_api() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+        let mock = server
+            .mock("POST", "/--/api/v2/push/send?useFcmV1=false")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .with_status(200)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+{
+    "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+    ]
+}
+"#,
+            )
+            .create();
+
+        let expo = Expo::new(ExpoClientOptions {
+            base_url: Some(url),
+            use_fcm_v1: Some(false),
+            ..Default::default()
+        });
+
+        let response = expo
+            .send_push_notifications(
+                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
+            )
+            .await?;
+
         assert_eq!(
             response,
             vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
