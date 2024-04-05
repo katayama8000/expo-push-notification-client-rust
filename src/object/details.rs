@@ -7,8 +7,11 @@ pub struct Details {
 
 #[derive(Debug, Clone, Eq, Deserialize, PartialEq, Serialize)]
 pub enum DetailsErrorType {
+    DeveloperError,
     DeviceNotRegistered,
+    ExpoError,
     InvalidCredentials,
     MessageTooBig,
     MessageRateExceeded,
+    ProviderError,
 }
