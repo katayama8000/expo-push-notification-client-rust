@@ -19,7 +19,7 @@ jobs:
           toolchain: stable
 
       - name: Login to crates.io
-        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN_FOR_EXPO_PUSH_NOTIFICATION_CLIENT }}
 
       - name: Publish to crates.io
         run: cargo publish
