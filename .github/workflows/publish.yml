@@ -1,0 +1,22 @@
+name: Publish to crates.io
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Login to crates.io
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN_FOR_EXPO_PUSH_NOTIFICATION_CLIENT }}
+
+      - name: Publish to crates.io
+        run: cargo publish
