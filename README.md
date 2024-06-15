@@ -23,12 +23,13 @@ cargo add expo_push_notification_client
 ### Usage
 
 ```rust
-use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, GetPushNotificationReceiptsRequest};
+use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage};
 
 // Initialize Expo client
 let expo = Expo::new(ExpoClientOptions {
     access_token: Some(access_token),
     use_fcm_v1: Some(false), // Set to true to use FCM v1 API
+    ..Default::default()
 });
 
 // Define Expo Push Tokens to send notifications to
@@ -38,10 +39,20 @@ let expo_push_tokens = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"];
 let expo_push_message = ExpoPushMessage::builder(expo_push_tokens).build()?;
 
 // Send push notifications using Expo client
-expo.send_push_notifications(expo_push_message).await;
+let tickets = expo.send_push_notifications(expo_push_message).await;
 
-// Define push notification IDs to retrieve receipts
-let expo_push_ids = GetPushNotificationReceiptsRequest::new(vec!["xxxxx".to_string(), "xxxxx".to_string()]);
+// Extract push notification IDs from tickets
+let mut expo_push_ids = vec![];
+for ticket in tickets {
+    match ticket {
+        ExpoPushTicket::Ok(ticket) => {
+            expo_push_ids.push(ticket.id);
+        }
+        ExpoPushTicket::Error(e) => {
+            // Handle error
+        }
+    }
+}
 
 // Retrieve push notification receipts using Expo client
 expo.get_push_notification_receipts(expo_push_ids).await;
