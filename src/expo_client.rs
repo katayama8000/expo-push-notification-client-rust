@@ -29,20 +29,27 @@ pub struct Expo {
 #[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
-    pub base_url: Option<String>,
     pub use_fcm_v1: Option<bool>,
 }
 
 impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
+        Self::new_with_base_url(options.access_token, "https://exp.host", options.use_fcm_v1)
+    }
+
+    pub fn new_with_base_url(
+        access_token: Option<String>,
+        base_url: &str,
+        use_fcm_v1: Option<bool>,
+    ) -> Self {
         Self {
-            access_token: options.access_token,
-            base_url: options.base_url.unwrap_or("https://exp.host".to_string()),
+            access_token,
+            base_url: base_url.to_string(),
             client: reqwest::Client::builder()
                 .gzip(true)
                 .build()
                 .expect("Client::new()"),
-            use_fcm_v1: options.use_fcm_v1,
+            use_fcm_v1,
         }
     }
 
@@ -83,10 +90,7 @@ impl Expo {
     /// # "#,
     /// #         )
     /// #         .create();
-    /// #     let expo = Expo::new(ExpoClientOptions {
-    /// #         base_url: Some(url),
-    /// #         ..Default::default()
-    /// #     });
+    /// #     let expo = Expo::new_with_base_url(None, &server.url(), None);
     /// #
     /// let response = expo
     ///     .send_push_notifications(
@@ -150,7 +154,7 @@ impl Expo {
     /// # "#,
     /// #         )
     /// #         .create();
-    /// #     let expo = Expo::new(ExpoClientOptions { base_url: Some(url), ..Default::default() });
+    /// #     let expo = Expo::new_with_base_url(None, &server.url(), None);
     /// let receipt_ids = expo.get_push_notification_receipts([
     ///     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     /// ]).await?;
@@ -262,11 +266,10 @@ impl Expo {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr as _;
-
     use crate::{
         Details, DetailsErrorType, ExpoPushErrorReceipt, ExpoPushMessage, ExpoPushSuccessTicket,
     };
+    use std::str::FromStr as _;
 
     use super::*;
 
@@ -299,7 +302,6 @@ mod tests {
     #[tokio::test]
     async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
             .match_header("accept-encoding", "gzip")
@@ -319,10 +321,7 @@ mod tests {
             )
             .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
 
         let response = expo
             .get_push_notification_receipts([
@@ -351,36 +350,30 @@ mod tests {
     #[tokio::test]
     async fn test_get_push_notification_receipts_error_response() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
-            .mock("POST", "/--/api/v2/push/getReceipts")
-            .match_header("accept-encoding", "gzip")
-            .match_header("content-type", "application/json")
-            .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
-            .with_status(200)
-            .with_header("content-type", "application/json; charset=utf-8")
-            .with_body(
-                r#"
-{
-    "data": {
-        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": {
-            "status": "error",
-            "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
-            "details": {
-                "error": "DeviceNotRegistered"
+                .mock("POST", "/--/api/v2/push/getReceipts")
+                .match_header("accept-encoding", "gzip")
+                .match_header("content-type", "application/json")
+                .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+                .with_status(200)
+                .with_header("content-type", "application/json; charset=utf-8")
+                .with_body(
+                    r#"
+    {
+        "data": {
+            "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": {
+                "status": "error",
+                "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+                "details": {
+                    "error": "DeviceNotRegistered"
+                }
             }
         }
     }
-}
-"#,
-            )
-            .create();
-
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
-
+    "#,
+                )
+                .create();
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
         let response = expo
             .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
             .await?;
@@ -388,12 +381,12 @@ mod tests {
         assert_eq!(response, {
             let mut map = HashMap::new();
             map.insert(
-                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-                ExpoPushReceipt::Error(ExpoPushErrorReceipt {
-                    message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
-                    details: Some(Details { error: Some(DetailsErrorType::DeviceNotRegistered) }),
-                }),
-            );
+                    ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                    ExpoPushReceipt::Error(ExpoPushErrorReceipt {
+                        message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
+                        details: Some(Details { error: Some(DetailsErrorType::DeviceNotRegistered) }),
+                    }),
+                );
             map
         });
         mock.assert();
@@ -403,7 +396,6 @@ mod tests {
     #[tokio::test]
     async fn test_get_push_notification_receipts_error_response_4xx() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
             .match_header("accept-encoding", "gzip")
@@ -413,18 +405,15 @@ mod tests {
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
                 r#"
-{
-    "error": "invalid_token",
-    "error_description":"The bearer token is invalid"
-}
-"#,
+    {
+        "error": "invalid_token",
+        "error_description":"The bearer token is invalid"
+    }
+    "#,
             )
             .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
 
         let result = expo
             .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
@@ -446,7 +435,6 @@ mod tests {
         assert_eq!(request.len(), 1023);
 
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
             .match_header("accept-encoding", "gzip")
@@ -458,22 +446,19 @@ mod tests {
             .with_body(
                 gzip(
                     r#"
-{
-    "data": {
-        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+    {
+        "data": {
+            "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+        }
     }
-}
-"#
+    "#
                     .as_bytes(),
                 )
                 .await?,
             )
             .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
         let receipts = expo.get_push_notification_receipts(ids).await?;
         assert_eq!(receipts, {
             let mut map = HashMap::new();
@@ -495,7 +480,6 @@ mod tests {
         assert_eq!(request.len(), 1062);
 
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/getReceipts")
             .match_header("accept-encoding", "gzip")
@@ -508,22 +492,18 @@ mod tests {
             .with_body(
                 gzip(
                     r#"
-{
-    "data": {
-        "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+    {
+        "data": {
+            "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+        }
     }
-}
-"#
+    "#
                     .as_bytes(),
                 )
                 .await?,
             )
             .create();
-
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
         let receipts = expo.get_push_notification_receipts(ids).await?;
         assert_eq!(receipts, {
             let mut map = HashMap::new();
@@ -540,7 +520,6 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
@@ -550,20 +529,15 @@ mod tests {
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
                 r#"
-{
-    "data": [
-        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-    ]
-}
-"#,
+    {
+        "data": [
+            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+        ]
+    }
+    "#,
             )
             .create();
-
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
-
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
         let response = expo
             .send_push_notifications(
                 ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
@@ -583,30 +557,26 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_multiple_messages() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
-            .mock("POST", "/--/api/v2/push/send")
-            .match_header("accept-encoding", "gzip")
-            .match_header("content-type", "application/json")
-            .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]},{"to":["ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]"]}]"#)
-            .with_status(200)
-            .with_header("content-type", "application/json; charset=utf-8")
-            .with_body(
-                r#"
-{
-    "data": [
-        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" },
-        { "status": "ok", "id": "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY" }
-    ]
-}
-"#,
-            )
-            .create();
+                .mock("POST", "/--/api/v2/push/send")
+                .match_header("accept-encoding", "gzip")
+                .match_header("content-type", "application/json")
+                .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]},{"to":["ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]"]}]"#)
+                .with_status(200)
+                .with_header("content-type", "application/json; charset=utf-8")
+                .with_body(
+                    r#"
+    {
+        "data": [
+            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" },
+            { "status": "ok", "id": "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY" }
+        ]
+    }
+    "#,
+                )
+                .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
 
         let response = expo
             .send_push_notifications([
@@ -633,35 +603,31 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_error_response() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
-            .mock("POST", "/--/api/v2/push/send")
-            .match_header("accept-encoding", "gzip")
-            .match_header("content-type", "application/json")
-            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
-            .with_status(200)
-            .with_header("content-type", "application/json; charset=utf-8")
-            .with_body(
-                r#"
-{
-    "data": [
-        {
-            "status": "error",
-            "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
-            "details": {
-                "error": "DeviceNotRegistered"
+                .mock("POST", "/--/api/v2/push/send")
+                .match_header("accept-encoding", "gzip")
+                .match_header("content-type", "application/json")
+                .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+                .with_status(200)
+                .with_header("content-type", "application/json; charset=utf-8")
+                .with_body(
+                    r#"
+    {
+        "data": [
+            {
+                "status": "error",
+                "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+                "details": {
+                    "error": "DeviceNotRegistered"
+                }
             }
-        }
-    ]
-}
-"#,
-            )
-            .create();
+        ]
+    }
+    "#,
+                )
+                .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
 
         let response = expo
             .send_push_notifications(
@@ -669,14 +635,14 @@ mod tests {
             )
             .await?;
         assert_eq!(
-            response,
-            vec![ExpoPushTicket::Error(ExpoPushErrorReceipt {
-                message: r#""ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" is not a registered push notification recipient"#.to_string(),
-                details: Some(Details {
-                    error: Some(DetailsErrorType::DeviceNotRegistered),
-                })
-            })]
-        );
+                response,
+                vec![ExpoPushTicket::Error(ExpoPushErrorReceipt {
+                    message: r#""ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" is not a registered push notification recipient"#.to_string(),
+                    details: Some(Details {
+                        error: Some(DetailsErrorType::DeviceNotRegistered),
+                    })
+                })]
+            );
         mock.assert();
         Ok(())
     }
@@ -684,7 +650,6 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_4xx() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
@@ -694,18 +659,15 @@ mod tests {
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
                 r#"
-{
-    "error": "invalid_token",
-    "error_description":"The bearer token is invalid"
-}
-"#,
+    {
+        "error": "invalid_token",
+        "error_description":"The bearer token is invalid"
+    }
+    "#,
             )
             .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
 
         let result = expo
             .send_push_notifications(
@@ -725,15 +687,15 @@ mod tests {
     fn test_successful_response_body() -> anyhow::Result<()> {
         // <https://docs.expo.dev/push-notifications/sending-notifications/#push-tickets>
         let response_body = r#"
-{
-  "data": [
-    { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" },
-    { "status": "ok", "id": "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY" },
-    { "status": "ok", "id": "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ" },
-    { "status": "ok", "id": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA" }
-  ]
-}
-"#;
+    {
+      "data": [
+        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" },
+        { "status": "ok", "id": "YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY" },
+        { "status": "ok", "id": "ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ" },
+        { "status": "ok", "id": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA" }
+      ]
+    }
+    "#;
         let parsed = serde_json::from_str::<SendPushNotificationSuccessfulResponse>(response_body)?;
         assert_eq!(
             parsed,
@@ -761,39 +723,39 @@ mod tests {
     fn test_with_device_not_registerd() -> anyhow::Result<()> {
         // <https://docs.expo.dev/push-notifications/sending-notifications/#push-tickets>
         let response_body = r#"
-{
-  "data": [
     {
-      "status": "error",
-      "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
-      "details": {
-        "error": "DeviceNotRegistered"
-      }
-    },
-    {
-      "status": "ok",
-      "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+      "data": [
+        {
+          "status": "error",
+          "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+          "details": {
+            "error": "DeviceNotRegistered"
+          }
+        },
+        {
+          "status": "ok",
+          "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+        }
+      ]
     }
-  ]
-}
-"#;
+    "#;
         let parsed = serde_json::from_str::<SendPushNotificationSuccessfulResponse>(response_body)?;
         assert_eq!(
-            parsed,
-            SendPushNotificationSuccessfulResponse {
-                data: vec![
-                    ExpoPushTicket::Error(ExpoPushErrorReceipt {
-                        message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
-                        details: Some(Details {
-                            error: Some(DetailsErrorType::DeviceNotRegistered),
-                        })
-                    }),
-                    ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                        id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-                    }),
-                ]
-            }
-        );
+                parsed,
+                SendPushNotificationSuccessfulResponse {
+                    data: vec![
+                        ExpoPushTicket::Error(ExpoPushErrorReceipt {
+                            message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
+                            details: Some(Details {
+                                error: Some(DetailsErrorType::DeviceNotRegistered),
+                            })
+                        }),
+                        ExpoPushTicket::Ok(ExpoPushSuccessTicket {
+                            id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                        }),
+                    ]
+                }
+            );
         Ok(())
     }
 
@@ -805,7 +767,6 @@ mod tests {
         assert_eq!(request.len(), 1064);
 
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
@@ -818,21 +779,19 @@ mod tests {
             .with_body(
                 gzip(
                     r#"
-{
-    "data": [
-        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-    ]
-}
-"#
+    {
+        "data": [
+            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+        ]
+    }
+    "#
                     .as_bytes(),
                 )
                 .await?,
             )
             .create();
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
+
         let response = expo
             .send_push_notifications(ExpoPushMessage::builder(to).build()?)
             .await?;
@@ -854,7 +813,6 @@ mod tests {
         assert_eq!(request.len(), 1020);
 
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
@@ -866,21 +824,19 @@ mod tests {
             .with_body(
                 gzip(
                     r#"
-{
-    "data": [
-        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-    ]
-}
-"#
+    {
+        "data": [
+            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+        ]
+    }
+    "#
                     .as_bytes(),
                 )
                 .await?,
             )
             .create();
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
+
         let response = expo
             .send_push_notifications(ExpoPushMessage::builder(to).build()?)
             .await?;
@@ -897,7 +853,6 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_with_new_api() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send?useFcmV1=true")
             .match_header("accept-encoding", "gzip")
@@ -907,20 +862,16 @@ mod tests {
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
                 r#"
-{
-    "data": [
-        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-    ]
-}
-"#,
+    {
+        "data": [
+            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+        ]
+    }
+    "#,
             )
             .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            use_fcm_v1: Some(true),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), Some(true));
 
         let response = expo
             .send_push_notifications(
@@ -941,7 +892,6 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_with_legacy_api() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
         let mock = server
             .mock("POST", "/--/api/v2/push/send?useFcmV1=false")
             .match_header("accept-encoding", "gzip")
@@ -951,20 +901,16 @@ mod tests {
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
                 r#"
-{
-    "data": [
-        { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-    ]
-}
-"#,
+    {
+        "data": [
+            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
+        ]
+    }
+    "#,
             )
             .create();
 
-        let expo = Expo::new(ExpoClientOptions {
-            base_url: Some(url),
-            use_fcm_v1: Some(false),
-            ..Default::default()
-        });
+        let expo = Expo::new_with_base_url(None, &server.url(), Some(false));
 
         let response = expo
             .send_push_notifications(
