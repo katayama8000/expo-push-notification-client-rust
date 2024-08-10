@@ -430,54 +430,50 @@ mod tests {
         Ok(())
     }
 
-    //     #[tokio::test]
-    //     async fn test_get_push_notification_gzip_len_lte_1024() -> anyhow::Result<()> {
-    //         let ids = ["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"].repeat(26);
-    //         let request = serde_json::json!({ "ids": ids });
-    //         let request = serde_json::to_vec(&request)?;
-    //         assert_eq!(request.len(), 1023);
+    #[tokio::test]
+    async fn test_get_push_notification_gzip_len_lte_1024() -> anyhow::Result<()> {
+        let ids = ["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"].repeat(26);
+        let request = serde_json::json!({ "ids": ids });
+        let request = serde_json::to_vec(&request)?;
+        assert_eq!(request.len(), 1023);
 
-    //         let mut server = mockito::Server::new_async().await;
-    //         let url = server.url();
-    //         let mock = server
-    //             .mock("POST", "/--/api/v2/push/getReceipts")
-    //             .match_header("accept-encoding", "gzip")
-    //             .match_header("content-type", "application/json")
-    //             .match_body(request)
-    //             .with_status(200)
-    //             .with_header("content-encoding", "gzip")
-    //             .with_header("content-type", "application/json; charset=utf-8")
-    //             .with_body(
-    //                 gzip(
-    //                     r#"
-    // {
-    //     "data": {
-    //         "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
-    //     }
-    // }
-    // "#
-    //                     .as_bytes(),
-    //                 )
-    //                 .await?,
-    //             )
-    //             .create();
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(request)
+            .with_status(200)
+            .with_header("content-encoding", "gzip")
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                gzip(
+                    r#"
+    {
+        "data": {
+            "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": { "status": "ok" }
+        }
+    }
+    "#
+                    .as_bytes(),
+                )
+                .await?,
+            )
+            .create();
 
-    //         let expo = Expo::new(ExpoClientOptions {
-    //             base_url: Some(url),
-    //             ..Default::default()
-    //         });
-    //         let receipts = expo.get_push_notification_receipts(ids).await?;
-    //         assert_eq!(receipts, {
-    //             let mut map = HashMap::new();
-    //             map.insert(
-    //                 ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-    //                 ExpoPushReceipt::Ok,
-    //             );
-    //             map
-    //         });
-    //         mock.assert();
-    //         Ok(())
-    //     }
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let receipts = expo.get_push_notification_receipts(ids).await?;
+        assert_eq!(receipts, {
+            let mut map = HashMap::new();
+            map.insert(
+                ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                ExpoPushReceipt::Ok,
+            );
+            map
+        });
+        mock.assert();
+        Ok(())
+    }
 
     //     #[tokio::test]
     //     async fn test_get_push_notification_gzip_len_gt_1024() -> anyhow::Result<()> {
@@ -974,10 +970,10 @@ mod tests {
     //         Ok(())
     //     }
 
-    //     async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
-    //         let mut encoder = GzipEncoder::new(vec![]);
-    //         tokio::io::AsyncWriteExt::write_all(&mut encoder, src).await?;
-    //         tokio::io::AsyncWriteExt::shutdown(&mut encoder).await?;
-    //         Ok(encoder.into_inner())
-    //     }
+    async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
+        let mut encoder = GzipEncoder::new(vec![]);
+        tokio::io::AsyncWriteExt::write_all(&mut encoder, src).await?;
+        tokio::io::AsyncWriteExt::shutdown(&mut encoder).await?;
+        Ok(encoder.into_inner())
+    }
 }
