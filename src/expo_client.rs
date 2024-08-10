@@ -396,43 +396,39 @@ mod tests {
         Ok(())
     }
 
-    //     #[tokio::test]
-    //     async fn test_get_push_notification_receipts_error_response_4xx() -> anyhow::Result<()> {
-    //         let mut server = mockito::Server::new_async().await;
-    //         let url = server.url();
-    //         let mock = server
-    //             .mock("POST", "/--/api/v2/push/getReceipts")
-    //             .match_header("accept-encoding", "gzip")
-    //             .match_header("content-type", "application/json")
-    //             .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
-    //             .with_status(401)
-    //             .with_header("content-type", "application/json; charset=utf-8")
-    //             .with_body(
-    //                 r#"
-    // {
-    //     "error": "invalid_token",
-    //     "error_description":"The bearer token is invalid"
-    // }
-    // "#,
-    //             )
-    //             .create();
+    #[tokio::test]
+    async fn test_get_push_notification_receipts_error_response_4xx() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock("POST", "/--/api/v2/push/getReceipts")
+            .match_header("accept-encoding", "gzip")
+            .match_header("content-type", "application/json")
+            .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+            .with_status(401)
+            .with_header("content-type", "application/json; charset=utf-8")
+            .with_body(
+                r#"
+    {
+        "error": "invalid_token",
+        "error_description":"The bearer token is invalid"
+    }
+    "#,
+            )
+            .create();
 
-    //         let expo = Expo::new(ExpoClientOptions {
-    //             base_url: Some(url),
-    //             ..Default::default()
-    //         });
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
 
-    //         let result = expo
-    //             .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
-    //             .await;
-    //         assert!(result.is_err());
-    //         assert_eq!(
-    //             result.unwrap_err().to_string(),
-    //             "Server error: Request failed: 401 Unauthorized"
-    //         );
-    //         mock.assert();
-    //         Ok(())
-    //     }
+        let result = expo
+            .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
+            .await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Server error: Request failed: 401 Unauthorized"
+        );
+        mock.assert();
+        Ok(())
+    }
 
     //     #[tokio::test]
     //     async fn test_get_push_notification_gzip_len_lte_1024() -> anyhow::Result<()> {
