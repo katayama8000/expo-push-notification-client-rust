@@ -90,10 +90,7 @@ impl Expo {
     /// # "#,
     /// #         )
     /// #         .create();
-    /// #     let expo = Expo::new(ExpoClientOptions {
-    /// #         base_url: Some(url),
-    /// #         ..Default::default()
-    /// #     });
+    /// #     let expo = Expo::new_with_base_url(None, &server.url(), None);
     /// #
     /// let response = expo
     ///     .send_push_notifications(
@@ -157,7 +154,7 @@ impl Expo {
     /// # "#,
     /// #         )
     /// #         .create();
-    /// #     let expo = Expo::new(ExpoClientOptions { base_url: Some(url), ..Default::default() });
+    /// #     let expo = Expo::new_with_base_url(None, &server.url(), None);
     /// let receipt_ids = expo.get_push_notification_receipts([
     ///     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     /// ]).await?;
