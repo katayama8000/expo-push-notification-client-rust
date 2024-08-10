@@ -350,57 +350,51 @@ mod tests {
         Ok(())
     }
 
-    //     #[tokio::test]
-    //     async fn test_get_push_notification_receipts_error_response() -> anyhow::Result<()> {
-    //         let mut server = mockito::Server::new_async().await;
-    //         let url = server.url();
-    //         let mock = server
-    //             .mock("POST", "/--/api/v2/push/getReceipts")
-    //             .match_header("accept-encoding", "gzip")
-    //             .match_header("content-type", "application/json")
-    //             .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
-    //             .with_status(200)
-    //             .with_header("content-type", "application/json; charset=utf-8")
-    //             .with_body(
-    //                 r#"
-    // {
-    //     "data": {
-    //         "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": {
-    //             "status": "error",
-    //             "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
-    //             "details": {
-    //                 "error": "DeviceNotRegistered"
-    //             }
-    //         }
-    //     }
-    // }
-    // "#,
-    //             )
-    //             .create();
+    #[tokio::test]
+    async fn test_get_push_notification_receipts_error_response() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+                .mock("POST", "/--/api/v2/push/getReceipts")
+                .match_header("accept-encoding", "gzip")
+                .match_header("content-type", "application/json")
+                .match_body(r#"{"ids":["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"]}"#)
+                .with_status(200)
+                .with_header("content-type", "application/json; charset=utf-8")
+                .with_body(
+                    r#"
+    {
+        "data": {
+            "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX": {
+                "status": "error",
+                "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
+                "details": {
+                    "error": "DeviceNotRegistered"
+                }
+            }
+        }
+    }
+    "#,
+                )
+                .create();
+        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let response = expo
+            .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
+            .await?;
 
-    //         let expo = Expo::new(ExpoClientOptions {
-    //             base_url: Some(url),
-    //             ..Default::default()
-    //         });
-
-    //         let response = expo
-    //             .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
-    //             .await?;
-
-    //         assert_eq!(response, {
-    //             let mut map = HashMap::new();
-    //             map.insert(
-    //                 ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
-    //                 ExpoPushReceipt::Error(ExpoPushErrorReceipt {
-    //                     message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
-    //                     details: Some(Details { error: Some(DetailsErrorType::DeviceNotRegistered) }),
-    //                 }),
-    //             );
-    //             map
-    //         });
-    //         mock.assert();
-    //         Ok(())
-    //     }
+        assert_eq!(response, {
+            let mut map = HashMap::new();
+            map.insert(
+                    ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
+                    ExpoPushReceipt::Error(ExpoPushErrorReceipt {
+                        message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
+                        details: Some(Details { error: Some(DetailsErrorType::DeviceNotRegistered) }),
+                    }),
+                );
+            map
+        });
+        mock.assert();
+        Ok(())
+    }
 
     //     #[tokio::test]
     //     async fn test_get_push_notification_receipts_error_response_4xx() -> anyhow::Result<()> {
