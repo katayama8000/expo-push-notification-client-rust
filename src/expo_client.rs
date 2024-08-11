@@ -23,25 +23,19 @@ pub struct Expo {
     access_token: Option<String>,
     base_url: String,
     client: reqwest::Client,
-    use_fcm_v1: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpoClientOptions {
     pub access_token: Option<String>,
-    pub use_fcm_v1: Option<bool>,
 }
 
 impl Expo {
     pub fn new(options: ExpoClientOptions) -> Self {
-        Self::new_with_base_url(options.access_token, "https://exp.host", options.use_fcm_v1)
+        Self::new_with_base_url(options.access_token, "https://exp.host")
     }
 
-    pub fn new_with_base_url(
-        access_token: Option<String>,
-        base_url: &str,
-        use_fcm_v1: Option<bool>,
-    ) -> Self {
+    pub fn new_with_base_url(access_token: Option<String>, base_url: &str) -> Self {
         Self {
             access_token,
             base_url: base_url.to_string(),
@@ -49,7 +43,6 @@ impl Expo {
                 .gzip(true)
                 .build()
                 .expect("Client::new()"),
-            use_fcm_v1,
         }
     }
 
@@ -90,7 +83,7 @@ impl Expo {
     /// # "#,
     /// #         )
     /// #         .create();
-    /// #     let expo = Expo::new_with_base_url(None, &server.url(), None);
+    /// #     let expo = Expo::new_with_base_url(None, &server.url());
     /// #
     /// let response = expo
     ///     .send_push_notifications(
@@ -115,13 +108,9 @@ impl Expo {
     where
         R: TryIntoSendPushNotificationsRequest,
     {
-        let mut path = String::from("/--/api/v2/push/send");
-        if let Some(use_fcm_v1) = self.use_fcm_v1 {
-            path.push_str(&format!("?useFcmV1={}", use_fcm_v1));
-        }
         let request = request.try_into_send_push_notifications_request()?;
         let response: SendPushNotificationSuccessfulResponse = self
-            .send_request(Method::POST, path.as_str(), request)
+            .send_request(Method::POST, "/--/api/v2/push/send", request)
             .await?;
         Ok(response.data)
     }
@@ -154,7 +143,7 @@ impl Expo {
     /// # "#,
     /// #         )
     /// #         .create();
-    /// #     let expo = Expo::new_with_base_url(None, &server.url(), None);
+    /// #     let expo = Expo::new_with_base_url(None, &server.url());
     /// let receipt_ids = expo.get_push_notification_receipts([
     ///     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     /// ]).await?;
@@ -321,7 +310,7 @@ mod tests {
             )
             .create();
 
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let response = expo
             .get_push_notification_receipts([
@@ -373,7 +362,7 @@ mod tests {
     "#,
                 )
                 .create();
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
         let response = expo
             .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
             .await?;
@@ -413,7 +402,7 @@ mod tests {
             )
             .create();
 
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let result = expo
             .get_push_notification_receipts(["XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"])
@@ -458,7 +447,7 @@ mod tests {
             )
             .create();
 
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
         let receipts = expo.get_push_notification_receipts(ids).await?;
         assert_eq!(receipts, {
             let mut map = HashMap::new();
@@ -503,7 +492,7 @@ mod tests {
                 .await?,
             )
             .create();
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
         let receipts = expo.get_push_notification_receipts(ids).await?;
         assert_eq!(receipts, {
             let mut map = HashMap::new();
@@ -537,7 +526,7 @@ mod tests {
     "#,
             )
             .create();
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
         let response = expo
             .send_push_notifications(
                 ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
@@ -576,7 +565,7 @@ mod tests {
                 )
                 .create();
 
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let response = expo
             .send_push_notifications([
@@ -627,7 +616,7 @@ mod tests {
                 )
                 .create();
 
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let response = expo
             .send_push_notifications(
@@ -667,7 +656,7 @@ mod tests {
             )
             .create();
 
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let result = expo
             .send_push_notifications(
@@ -790,7 +779,7 @@ mod tests {
                 .await?,
             )
             .create();
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let response = expo
             .send_push_notifications(ExpoPushMessage::builder(to).build()?)
@@ -835,89 +824,11 @@ mod tests {
                 .await?,
             )
             .create();
-        let expo = Expo::new_with_base_url(None, &server.url(), None);
+        let expo = Expo::new_with_base_url(None, &server.url());
 
         let response = expo
             .send_push_notifications(ExpoPushMessage::builder(to).build()?)
             .await?;
-        assert_eq!(
-            response,
-            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
-            })]
-        );
-        mock.assert();
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_send_push_notifications_with_new_api() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new_async().await;
-        let mock = server
-            .mock("POST", "/--/api/v2/push/send?useFcmV1=true")
-            .match_header("accept-encoding", "gzip")
-            .match_header("content-type", "application/json")
-            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
-            .with_status(200)
-            .with_header("content-type", "application/json; charset=utf-8")
-            .with_body(
-                r#"
-    {
-        "data": [
-            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-        ]
-    }
-    "#,
-            )
-            .create();
-
-        let expo = Expo::new_with_base_url(None, &server.url(), Some(true));
-
-        let response = expo
-            .send_push_notifications(
-                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
-            )
-            .await?;
-
-        assert_eq!(
-            response,
-            vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {
-                id: ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?
-            })]
-        );
-        mock.assert();
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_send_push_notifications_with_legacy_api() -> anyhow::Result<()> {
-        let mut server = mockito::Server::new_async().await;
-        let mock = server
-            .mock("POST", "/--/api/v2/push/send?useFcmV1=false")
-            .match_header("accept-encoding", "gzip")
-            .match_header("content-type", "application/json")
-            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
-            .with_status(200)
-            .with_header("content-type", "application/json; charset=utf-8")
-            .with_body(
-                r#"
-    {
-        "data": [
-            { "status": "ok", "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" }
-        ]
-    }
-    "#,
-            )
-            .create();
-
-        let expo = Expo::new_with_base_url(None, &server.url(), Some(false));
-
-        let response = expo
-            .send_push_notifications(
-                ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()?,
-            )
-            .await?;
-
         assert_eq!(
             response,
             vec![ExpoPushTicket::Ok(ExpoPushSuccessTicket {

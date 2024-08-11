@@ -28,7 +28,6 @@ use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage};
 // Initialize Expo client
 let expo = Expo::new(ExpoClientOptions {
     access_token: Some(access_token),
-    use_fcm_v1: Some(false), // Set to true to use FCM v1 API
 });
 
 // Define Expo Push Tokens to send notifications to
