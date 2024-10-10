@@ -22,6 +22,7 @@ pub struct ExpoPushMessage {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
 }
 
@@ -248,6 +249,7 @@ mod tests {
         .category_id("category_id")
         .mutable_content(true)
         .title("title")
+        .content_available(true)
         .build()?;
 
         assert_eq!(
@@ -270,9 +272,38 @@ mod tests {
                 channel_id: Some("channel_id".to_string()),
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
-                _content_available: None,
+                _content_available: Some(true),
             }
         );
+
+        println!("{}", serde_json::to_string_pretty(&message).unwrap());
+
+        assert_eq!(
+            serde_json::to_string_pretty(&message).unwrap(),
+            r#"{
+  "to": [
+    "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  ],
+  "title": "title",
+  "body": "body",
+  "data": [
+    "data"
+  ],
+  "ttl": 100,
+  "expiration": 100,
+  "priority": "high",
+  "subtitle": "subtitle",
+  "sound": "default",
+  "badge": 1,
+  "channelId": "channel_id",
+  "categoryId": "category_id",
+  "mutableContent": true,
+  "_contentAvailable": true
+}"#
+        );
+
         Ok(())
     }
 
