@@ -13,10 +13,16 @@ categories = ["api-bindings", "web-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["default-tls"]
+
+default-tls = ["reqwest/default-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+
 [dependencies]
 async-compression = { version = "0.4.6", features = ["gzip", "tokio"] }
 regex = "1.10.3"
-reqwest = { version = "0.12.2", features = ["json", "gzip"] }
+reqwest = { version = "0.12.2", default-features = false, features = ["json", "gzip"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
 serde_with = "3.6.0"
