@@ -21,6 +21,7 @@ pub struct ExpoPushMessage {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    _content_available: Option<bool>,
 }
 
 impl ExpoPushMessage {
@@ -48,6 +49,7 @@ pub struct ExpoPushMessageBuilder {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    _content_available: Option<bool>,
 }
 
 impl ExpoPushMessageBuilder {
@@ -66,6 +68,7 @@ impl ExpoPushMessageBuilder {
             channel_id: None,
             category_id: None,
             mutable_content: None,
+            _content_available: None,
         }
     }
 
@@ -150,6 +153,14 @@ impl ExpoPushMessageBuilder {
         self
     }
 
+    // for IOS only
+    // When this is set to true, the notification will cause the iOS app to start in the background to run a background task.
+    // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
+    pub fn content_available(mut self, content_available: bool) -> Self {
+        self._content_available = Some(content_available);
+        self
+    }
+
     pub fn build(self) -> Result<ExpoPushMessage, ValidationError> {
         if !self.is_valid_expo_push_token() {
             return Err(ValidationError::InvalidToken);
@@ -177,6 +188,7 @@ impl ExpoPushMessageBuilder {
             channel_id: self.channel_id,
             category_id: self.category_id,
             mutable_content: self.mutable_content,
+            _content_available: self._content_available,
         };
 
         Ok(message)
@@ -257,6 +269,7 @@ mod tests {
                 channel_id: Some("channel_id".to_string()),
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
+                _content_available: None,
             }
         );
         Ok(())
