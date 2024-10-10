@@ -7,6 +7,7 @@ use crate::error::ValidationError;
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ExpoPushMessage {
     to: Vec<String>,
     title: Option<String>,
@@ -21,6 +22,8 @@ pub struct ExpoPushMessage {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    #[serde(rename = "_contentAvailable")]
+    _content_available: Option<bool>,
 }
 
 impl ExpoPushMessage {
@@ -48,6 +51,7 @@ pub struct ExpoPushMessageBuilder {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    _content_available: Option<bool>,
 }
 
 impl ExpoPushMessageBuilder {
@@ -66,6 +70,7 @@ impl ExpoPushMessageBuilder {
             channel_id: None,
             category_id: None,
             mutable_content: None,
+            _content_available: None,
         }
     }
 
@@ -150,6 +155,14 @@ impl ExpoPushMessageBuilder {
         self
     }
 
+    // for IOS only
+    // When this is set to true, the notification will cause the iOS app to start in the background to run a background task.
+    // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
+    pub fn content_available(mut self, content_available: bool) -> Self {
+        self._content_available = Some(content_available);
+        self
+    }
+
     pub fn build(self) -> Result<ExpoPushMessage, ValidationError> {
         if !self.is_valid_expo_push_token() {
             return Err(ValidationError::InvalidToken);
@@ -177,6 +190,7 @@ impl ExpoPushMessageBuilder {
             channel_id: self.channel_id,
             category_id: self.category_id,
             mutable_content: self.mutable_content,
+            _content_available: self._content_available,
         };
 
         Ok(message)
@@ -235,6 +249,7 @@ mod tests {
         .category_id("category_id")
         .mutable_content(true)
         .title("title")
+        .content_available(true)
         .build()?;
 
         assert_eq!(
@@ -257,8 +272,38 @@ mod tests {
                 channel_id: Some("channel_id".to_string()),
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
+                _content_available: Some(true),
             }
         );
+
+        println!("{}", serde_json::to_string_pretty(&message).unwrap());
+
+        assert_eq!(
+            serde_json::to_string_pretty(&message).unwrap(),
+            r#"{
+  "to": [
+    "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  ],
+  "title": "title",
+  "body": "body",
+  "data": [
+    "data"
+  ],
+  "ttl": 100,
+  "expiration": 100,
+  "priority": "high",
+  "subtitle": "subtitle",
+  "sound": "default",
+  "badge": 1,
+  "channelId": "channel_id",
+  "categoryId": "category_id",
+  "mutableContent": true,
+  "_contentAvailable": true
+}"#
+        );
+
         Ok(())
     }
 
