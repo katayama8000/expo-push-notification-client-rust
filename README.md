@@ -77,5 +77,5 @@ let expo_push_message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxx
 ### Changing TLS Backend
 This crate uses Reqwest with its default features. However, you can change tls backend by disabling the default features and enabling the `rustls-tls` feature, which uses a Rust implementation of TLS. This approach may offer better compatibility across different environments.
 ```toml
-expo_push_notification_client = { version = "0.4.1", default-features = false, features = ["rustls-tls"] }
+expo_push_notification_client = { version = "0.5.0", default-features = false, features = ["rustls-tls"] }
 ```
