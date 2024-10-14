@@ -211,7 +211,8 @@ impl Expo {
         if let Some(token) = access_token {
             headers.insert(
                 AUTHORIZATION,
-                HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                HeaderValue::from_str(&format!("Bearer {}", token))
+                    .expect("Bearer token is valid and can be converted to HeaderValue"),
             );
         }
 

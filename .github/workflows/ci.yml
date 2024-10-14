@@ -20,4 +20,5 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - run: cargo fmt -- --check
       - run: cargo clippy --all-features -- --deny warnings
+      - run: cargo clippy -- -D clippy::unwrap_used
       - run: cargo test --all-features
