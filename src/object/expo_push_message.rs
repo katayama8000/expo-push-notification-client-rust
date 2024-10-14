@@ -276,10 +276,13 @@ mod tests {
             }
         );
 
-        println!("{}", serde_json::to_string_pretty(&message).unwrap());
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&message).map_err(|_| ValidationError::InvalidData)?
+        );
 
         assert_eq!(
-            serde_json::to_string_pretty(&message).unwrap(),
+            serde_json::to_string_pretty(&message).map_err(|_| ValidationError::InvalidData)?,
             r#"{
   "to": [
     "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
@@ -303,7 +306,6 @@ mod tests {
   "_contentAvailable": true
 }"#
         );
-
         Ok(())
     }
 
