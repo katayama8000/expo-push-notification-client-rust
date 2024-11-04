@@ -59,9 +59,15 @@ expo.get_push_notification_receipts(expo_push_ids).await;
 Additionally, you can further customize the ExpoPushMessage by adding more options. Refer to the [docs](https://docs.expo.dev/push-notifications/sending-notifications/#formats) for more details.
 ```rust
 // Build Expo Push Message with detailed configurations
+// Build Expo Push Message with detailed configurations
+#[derive(Serialize)]
+struct Data {
+    data: String,
+}
+
 let expo_push_message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
     .body("body")
-    .data(&[("data".to_string())])?
+    .data(&Data { data: "data".to_string()})?
     .ttl(100)
     .expiration(100)
     .priority("high")
