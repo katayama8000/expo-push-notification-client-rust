@@ -229,16 +229,23 @@ impl ExpoPushMessageBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_expo_push_message_builder() -> Result<(), ValidationError> {
+        #[derive(Serialize)]
+        struct Data {
+            data: String,
+        }
         let message = ExpoPushMessage::builder([
             "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
             "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
             "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         ])
         .body("body")
-        .data(&[("data".to_string())])?
+        .data(&Data {
+            data: "data".to_string(),
+        })?
         .ttl(100)
         .expiration(100)
         .priority("high")
@@ -258,11 +265,11 @@ mod tests {
                 to: vec![
                     "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
                     "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
-                    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string()
+                    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
                 ],
                 title: Some("title".to_string()),
                 body: Some("body".to_string()),
-                data: Some(Value::Array(vec![Value::String("data".to_string())])),
+                data: Some(json!({ "data": "data" })),
                 ttl: Some(100),
                 expiration: Some(100),
                 priority: Some("high".to_string()),
@@ -276,36 +283,34 @@ mod tests {
             }
         );
 
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&message).map_err(|_| ValidationError::InvalidData)?
-        );
+        let expected_json = json!({
+            "to": [
+                "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+                "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+                "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            ],
+            "title": "title",
+            "body": "body",
+            "data": {
+                "data": "data"
+            },
+            "ttl": 100,
+            "expiration": 100,
+            "priority": "high",
+            "subtitle": "subtitle",
+            "sound": "default",
+            "badge": 1,
+            "channelId": "channel_id",
+            "categoryId": "category_id",
+            "mutableContent": true,
+            "_contentAvailable": true
+        });
 
-        assert_eq!(
-            serde_json::to_string_pretty(&message).map_err(|_| ValidationError::InvalidData)?,
-            r#"{
-  "to": [
-    "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-    "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  ],
-  "title": "title",
-  "body": "body",
-  "data": [
-    "data"
-  ],
-  "ttl": 100,
-  "expiration": 100,
-  "priority": "high",
-  "subtitle": "subtitle",
-  "sound": "default",
-  "badge": 1,
-  "channelId": "channel_id",
-  "categoryId": "category_id",
-  "mutableContent": true,
-  "_contentAvailable": true
-}"#
-        );
+        let serialized_message =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_message =
+            serde_json::to_value(&expected_json).map_err(|_| ValidationError::InvalidData)?;
+        assert_eq!(serialized_message, expected_message);
         Ok(())
     }
 
@@ -327,5 +332,14 @@ mod tests {
             .build();
 
         assert_eq!(message, Err(ValidationError::InvalidPriority));
+    }
+
+    #[test]
+    fn expo_push_message_builder_invalid_sound() {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .sound("invalid_sound")
+            .build();
+
+        assert_eq!(message, Err(ValidationError::InvalidSound));
     }
 }
