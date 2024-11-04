@@ -259,6 +259,30 @@ mod tests {
         .content_available(true)
         .build()?;
 
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec![
+                    "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+                    "ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string(),
+                    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                ],
+                title: Some("title".to_string()),
+                body: Some("body".to_string()),
+                data: Some(json!({ "data": "data" })),
+                ttl: Some(100),
+                expiration: Some(100),
+                priority: Some("high".to_string()),
+                subtitle: Some("subtitle".to_string()),
+                sound: Some("default".to_string()),
+                badge: Some(1),
+                channel_id: Some("channel_id".to_string()),
+                category_id: Some("category_id".to_string()),
+                mutable_content: Some(true),
+                _content_available: Some(true),
+            }
+        );
+
         let expected_json = json!({
             "to": [
                 "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
