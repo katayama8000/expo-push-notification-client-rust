@@ -309,4 +309,13 @@ mod tests {
 
         assert_eq!(message, Err(ValidationError::InvalidPriority));
     }
+
+    #[test]
+    fn expo_push_message_builder_invalid_sound() {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .sound("invalid_sound")
+            .build();
+
+        assert_eq!(message, Err(ValidationError::InvalidSound));
+    }
 }
