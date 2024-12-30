@@ -193,6 +193,8 @@ impl Expo {
         Ok(response.data)
     }
 
+    // private methods
+
     async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut encoder = GzipEncoder::new(vec![]);
         encoder.write_all(src).await?;
