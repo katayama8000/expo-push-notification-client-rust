@@ -318,6 +318,31 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_chunk_expo_push_request() -> anyhow::Result<()> {
+        let expo = Expo::new(ExpoClientOptions::default());
+
+        let test_cases = vec![(1, 1), (100, 1), (101, 2), (250, 3)];
+
+        for (message_count, expected_chunks) in test_cases {
+            let messages = (0..message_count)
+                .map(|_| {
+                    ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            let chunks = expo.chunk_push_notifications(messages);
+
+            assert_eq!(
+                chunks.len(),
+                expected_chunks,
+                "Failed for {} messages",
+                message_count
+            );
+        }
+
+        Ok(())
+    }
     #[tokio::test]
     async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
