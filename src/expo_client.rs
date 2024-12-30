@@ -9,7 +9,7 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{
     error::CustomError,
-    object::{ExpoPushReceipt, ExpoPushTicket, TryIntoSendPushNotificationsRequest},
+    object::{ExpoPushReceipt, ExpoPushTicket, TryIntoSendPushNotificationsRequest, ExpoPushMessage},
     ExpoPushReceiptId,
 };
 
@@ -109,10 +109,15 @@ impl Expo {
         R: TryIntoSendPushNotificationsRequest,
     {
         let request = request.try_into_send_push_notifications_request()?;
-        let response: SendPushNotificationSuccessfulResponse = self
-            .send_request(Method::POST, "/--/api/v2/push/send", request)
-            .await?;
-        Ok(response.data)
+        let chunks = self.chunk_push_notifications(request.0);
+        let mut tickets = Vec::new();
+        for chunk in chunks {
+            let response: SendPushNotificationSuccessfulResponse = self
+                .send_request(Method::POST, "/--/api/v2/push/send", chunk)
+                .await?;
+            tickets.extend(response.data);
+        }
+        Ok(tickets)
     }
 
     /// Get push notification receipts
@@ -251,6 +256,22 @@ impl Expo {
             }
             Err(err) => Err(CustomError::ServerErr(format!("Request failed: {}", err))),
         }
+    }
+
+    fn chunk_push_notifications(&self, messages: Vec<ExpoPushMessage>) -> Vec<Vec<ExpoPushMessage>> {
+        let mut chunks = Vec::new();
+        let mut chunk = Vec::new();
+        for message in messages {
+            if chunk.len() == 100 {
+                chunks.push(chunk);
+                chunk = Vec::new();
+            }
+            chunk.push(message);
+        }
+        if !chunk.is_empty() {
+            chunks.push(chunk);
+        }
+        chunks
     }
 }
 
