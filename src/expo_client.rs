@@ -261,7 +261,7 @@ impl Expo {
         }
     }
 
-    pub fn chunk_push_notifications(
+    fn chunk_push_notifications(
         &self,
         messages: Vec<ExpoPushMessage>,
     ) -> Vec<SendPushNotificationsRequest> {
