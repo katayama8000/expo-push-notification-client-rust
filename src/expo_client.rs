@@ -265,21 +265,10 @@ impl Expo {
         &self,
         messages: Vec<ExpoPushMessage>,
     ) -> Vec<SendPushNotificationsRequest> {
-        let mut chunks = Vec::new();
-        let mut chunk = Vec::new();
-
-        for message in messages {
-            if chunk.len() == 100 {
-                chunks.push(SendPushNotificationsRequest::from(chunk));
-                chunk = Vec::new();
-            }
-            chunk.push(message);
-        }
-
-        if !chunk.is_empty() {
-            chunks.push(SendPushNotificationsRequest::from(chunk));
-        }
-        chunks
+        messages
+            .chunks(100)
+            .map(|chunk| SendPushNotificationsRequest::from(chunk.to_vec()))
+            .collect()
     }
 }
 
