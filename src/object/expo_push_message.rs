@@ -1,13 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
-use anyhow::Result;
 
 use crate::error::ValidationError;
 
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExpoPushMessage {
     to: Vec<String>,

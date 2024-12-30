@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use anyhow::Result;
 
 #[derive(Debug, Deserialize, PartialEq, thiserror::Error, Eq, Hash)]
 pub enum CustomError {
@@ -36,7 +35,6 @@ pub enum ValidationError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::Result;
 
     #[test]
     fn test_impl_error() {

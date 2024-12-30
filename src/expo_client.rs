@@ -9,7 +9,9 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{
     error::CustomError,
-    object::{ExpoPushReceipt, ExpoPushTicket, TryIntoSendPushNotificationsRequest, ExpoPushMessage},
+    object::{
+        ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket, TryIntoSendPushNotificationsRequest,
+    },
     ExpoPushReceiptId,
 };
 
@@ -109,7 +111,7 @@ impl Expo {
         R: TryIntoSendPushNotificationsRequest,
     {
         let request = request.try_into_send_push_notifications_request()?;
-        let chunks = self.chunk_push_notifications(request.0);
+        let chunks = self.chunk_push_notifications(request.messages());
         let mut tickets = Vec::new();
         for chunk in chunks {
             let response: SendPushNotificationSuccessfulResponse = self
@@ -258,7 +260,10 @@ impl Expo {
         }
     }
 
-    fn chunk_push_notifications(&self, messages: Vec<ExpoPushMessage>) -> Vec<Vec<ExpoPushMessage>> {
+    pub fn chunk_push_notifications(
+        &self,
+        messages: Vec<ExpoPushMessage>,
+    ) -> Vec<Vec<ExpoPushMessage>> {
         let mut chunks = Vec::new();
         let mut chunk = Vec::new();
         for message in messages {
