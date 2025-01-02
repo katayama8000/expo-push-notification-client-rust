@@ -1,7 +1,19 @@
 use crate::{CustomError, ExpoPushMessage};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SendPushNotificationsRequest(Vec<ExpoPushMessage>);
+
+impl From<Vec<ExpoPushMessage>> for SendPushNotificationsRequest {
+    fn from(messages: Vec<ExpoPushMessage>) -> Self {
+        Self(messages)
+    }
+}
+
+impl SendPushNotificationsRequest {
+    pub fn messages(&self) -> Vec<ExpoPushMessage> {
+        self.0.clone()
+    }
+}
 
 impl SendPushNotificationsRequest {
     fn new(messages: Vec<ExpoPushMessage>) -> Result<Self, CustomError> {

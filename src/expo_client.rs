@@ -9,7 +9,10 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{
     error::CustomError,
-    object::{ExpoPushReceipt, ExpoPushTicket, TryIntoSendPushNotificationsRequest},
+    object::{
+        ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket, SendPushNotificationsRequest,
+        TryIntoSendPushNotificationsRequest,
+    },
     ExpoPushReceiptId,
 };
 
@@ -109,10 +112,15 @@ impl Expo {
         R: TryIntoSendPushNotificationsRequest,
     {
         let request = request.try_into_send_push_notifications_request()?;
-        let response: SendPushNotificationSuccessfulResponse = self
-            .send_request(Method::POST, "/--/api/v2/push/send", request)
-            .await?;
-        Ok(response.data)
+        let chunks = self.chunk_push_notifications(request.messages());
+        let mut tickets = Vec::new();
+        for chunk in chunks {
+            let response: SendPushNotificationSuccessfulResponse = self
+                .send_request(Method::POST, "/--/api/v2/push/send", chunk)
+                .await?;
+            tickets.extend(response.data);
+        }
+        Ok(tickets)
     }
 
     /// Get push notification receipts
@@ -185,6 +193,8 @@ impl Expo {
         Ok(response.data)
     }
 
+    // private methods
+
     async fn gzip(src: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut encoder = GzipEncoder::new(vec![]);
         encoder.write_all(src).await?;
@@ -252,6 +262,16 @@ impl Expo {
             Err(err) => Err(CustomError::ServerErr(format!("Request failed: {}", err))),
         }
     }
+
+    fn chunk_push_notifications(
+        &self,
+        messages: Vec<ExpoPushMessage>,
+    ) -> Vec<SendPushNotificationsRequest> {
+        messages
+            .chunks(100)
+            .map(|chunk| SendPushNotificationsRequest::from(chunk.to_vec()))
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -289,6 +309,31 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_chunk_expo_push_request() -> anyhow::Result<()> {
+        let expo = Expo::new(ExpoClientOptions::default());
+
+        let test_cases = vec![(1, 1), (100, 1), (101, 2), (250, 3)];
+
+        for (message_count, expected_chunks) in test_cases {
+            let messages = (0..message_count)
+                .map(|_| {
+                    ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]).build()
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            let chunks = expo.chunk_push_notifications(messages);
+
+            assert_eq!(
+                chunks.len(),
+                expected_chunks,
+                "Failed for {} messages",
+                message_count
+            );
+        }
+
+        Ok(())
+    }
     #[tokio::test]
     async fn test_get_push_notification_receipts() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
