@@ -221,7 +221,7 @@ impl Expo {
         if let Some(token) = access_token {
             headers.insert(
                 AUTHORIZATION,
-                HeaderValue::from_str(&format!("Bearer {}", token))
+                HeaderValue::from_str(&format!("Bearer {token}"))
                     .expect("Bearer token is valid and can be converted to HeaderValue"),
             );
         }
@@ -238,7 +238,7 @@ impl Expo {
         }?;
 
         match client
-            .request(method, format!("{}{}", base_url, path))
+            .request(method, format!("{base_url}{path}"))
             .headers(headers)
             .body(body)
             .send()
@@ -248,8 +248,7 @@ impl Expo {
                 if response.status().is_success() {
                     Ok(response.json::<T>().await.map_err(|err| {
                         CustomError::DeserializeErr(format!(
-                            "Failed to deserialize response: {}",
-                            err
+                            "Failed to deserialize response: {err}"
                         ))
                     })?)
                 } else {
@@ -259,7 +258,7 @@ impl Expo {
                     )))
                 }
             }
-            Err(err) => Err(CustomError::ServerErr(format!("Request failed: {}", err))),
+            Err(err) => Err(CustomError::ServerErr(format!("Request failed: {err}"))),
         }
     }
 
