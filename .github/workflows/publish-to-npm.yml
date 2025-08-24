@@ -1,0 +1,196 @@
+name: Publish to npm
+
+on:
+  workflow_call:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not actually publish)'
+        required: false
+        default: false
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not actually publish)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            platform: linux-x64
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            platform: linux-arm64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            platform: darwin-x64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            platform: darwin-arm64
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+            platform: win32-x64
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            platform: win32-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: ${{ matrix.target }}
+
+      - name: Install musl toolchain
+        if: contains(matrix.target, 'musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-musl" ]; then
+            # Install aarch64 cross-compilation tools
+            sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+          fi
+
+      - name: Install Windows cross-compilation tools
+        if: matrix.target == 'x86_64-pc-windows-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Install cargo-audit
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Security audit
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: cargo audit
+
+      - name: Build binary
+        timeout-minutes: 30
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CARGO_TERM_COLOR: always
+          RUST_BACKTRACE: 1
+          # aarch64 cross-compilation linker
+          CC_aarch64_unknown_linux_musl: aarch64-linux-gnu-gcc
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Verify binary
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = "win32-x64" ] || [ "${{ matrix.platform }}" = "win32-arm64" ]; then
+            BINARY_PATH="target/${{ matrix.target }}/release/expo-push-notification-client.exe"
+          else
+            BINARY_PATH="target/${{ matrix.target }}/release/expo-push-notification-client"
+          fi
+          
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "Binary not found at $BINARY_PATH"
+            exit 1
+          fi
+          
+          ls -la "$BINARY_PATH"
+
+      - name: Prepare platform package
+        shell: bash
+        run: |
+          mkdir -p dist/${{ matrix.platform }}
+          
+          # Check if packages directory exists
+          if [ ! -d "packages/@expo-push-notification-client/expo-push-notification-client-${{ matrix.platform }}" ]; then
+            echo "packages/@expo-push-notification-client/expo-push-notification-client-${{ matrix.platform }} directory not found"
+            exit 1
+          fi
+          
+          cp -r packages/@expo-push-notification-client/expo-push-notification-client-${{ matrix.platform }}/* dist/${{ matrix.platform }}/
+          
+          # Copy the binary to the platform package
+          if [ "${{ matrix.platform }}" = "win32-x64" ] || [ "${{ matrix.platform }}" = "win32-arm64" ]; then
+            cp target/${{ matrix.target }}/release/expo-push-notification-client.exe dist/${{ matrix.platform }}/
+          else
+            cp target/${{ matrix.target }}/release/expo-push-notification-client dist/${{ matrix.platform }}/
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: 'dist/${{ matrix.platform }}/package.json'
+
+      - name: Dry run publish platform package
+        if: inputs.dry_run == true
+        shell: bash
+        run: |
+          cd dist/${{ matrix.platform }}
+          npm publish --access public --dry-run
+
+      - name: Publish platform package
+        if: inputs.dry_run == false
+        shell: bash
+        run: |
+          cd dist/${{ matrix.platform }}
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-main:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: 'packages/@expo-push-notification-client/expo-push-notification-client/package.json'
+
+      - name: Verify main package
+        shell: bash
+        run: |
+          if [ ! -d "packages/@expo-push-notification-client/expo-push-notification-client" ]; then
+            echo "packages/@expo-push-notification-client/expo-push-notification-client directory not found"
+            exit 1
+          fi
+          
+          ls -la packages/@expo-push-notification-client/expo-push-notification-client/
+
+      - name: Dry run publish main package
+        if: inputs.dry_run == true
+        shell: bash
+        run: |
+          cd packages/@expo-push-notification-client/expo-push-notification-client
+          npm publish --access public --dry-run
+
+      - name: Publish main package
+        if: inputs.dry_run == false
+        shell: bash
+        run: |
+          cd packages/@expo-push-notification-client/expo-push-notification-client
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
