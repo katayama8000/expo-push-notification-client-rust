@@ -97,9 +97,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "win32-x64" ] || [ "${{ matrix.platform }}" = "win32-arm64" ]; then
-            BINARY_PATH="target/${{ matrix.target }}/release/expo-push-notification-client.exe"
+            BINARY_PATH="target/${{ matrix.target }}/release/expo_push_notification_client.exe"
           else
-            BINARY_PATH="target/${{ matrix.target }}/release/expo-push-notification-client"
+            BINARY_PATH="target/${{ matrix.target }}/release/expo_push_notification_client"
           fi
           
           if [ ! -f "$BINARY_PATH" ]; then
@@ -124,9 +124,9 @@ jobs:
           
           # Copy the binary to the platform package
           if [ "${{ matrix.platform }}" = "win32-x64" ] || [ "${{ matrix.platform }}" = "win32-arm64" ]; then
-            cp target/${{ matrix.target }}/release/expo-push-notification-client.exe dist/${{ matrix.platform }}/
+            cp target/${{ matrix.target }}/release/expo_push_notification_client.exe dist/${{ matrix.platform }}/
           else
-            cp target/${{ matrix.target }}/release/expo-push-notification-client dist/${{ matrix.platform }}/
+            cp target/${{ matrix.target }}/release/expo_push_notification_client dist/${{ matrix.platform }}/
           fi
 
       - name: Setup Node.js
