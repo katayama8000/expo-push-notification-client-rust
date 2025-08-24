@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+
+const { platform, arch, env } = process;
+const { spawnSync } = require("child_process");
+const { resolve } = require("path");
+
+const PLATFORMS = {
+    win32: {
+        x64: "@expo-push-notification-client/expo-push-notification-client-win32-x64/expo-push-notification-client.exe",
+        arm64: "@expo-push-notification-client/expo-push-notification-client-win32-arm64/expo-push-notification-client.exe",
+    },
+    darwin: {
+        x64: "@expo-push-notification-client/expo-push-notification-client-darwin-x64/expo-push-notification-client",
+        arm64: "@expo-push-notification-client/expo-push-notification-client-darwin-arm64/expo-push-notification-client",
+    },
+    linux: {
+        x64: "@expo-push-notification-client/expo-push-notification-client-linux-x64/expo-push-notification-client",
+        arm64: "@expo-push-notification-client/expo-push-notification-client-linux-arm64/expo-push-notification-client",
+    },
+};
+
+function getBinaryPath() {
+    // Allow manual override via environment variable
+    if (env.EXPO_PUSH_NOTIFICATION_CLIENT_BINARY) {
+        return env.EXPO_PUSH_NOTIFICATION_CLIENT_BINARY;
+    }
+
+    // Get platform-specific binary path
+    const platformBinaries = PLATFORMS[platform];
+    if (!platformBinaries) {
+        return null;
+    }
+
+    const binaryPath = platformBinaries[arch];
+    if (!binaryPath) {
+        return null;
+    }
+
+    return binaryPath;
+}
+
+function main() {
+    const binaryPath = getBinaryPath();
+
+    if (!binaryPath) {
+        console.error(`Unsupported platform: ${platform}-${arch}`);
+        console.error('');
+        console.error('Supported platforms:');
+        for (const [plt, archs] of Object.entries(PLATFORMS)) {
+            for (const archName of Object.keys(archs)) {
+                console.error(`  ${plt}-${archName}`);
+            }
+        }
+        console.error('');
+        console.error('You can manually specify a binary path with the EXPO_PUSH_NOTIFICATION_CLIENT_BINARY environment variable.');
+        process.exit(1);
+    }
+
+    let resolvedBinaryPath;
+    try {
+        resolvedBinaryPath = require.resolve(binaryPath);
+    } catch (error) {
+        console.error(`Failed to find binary for ${platform}-${arch}`);
+        console.error('');
+        console.error('This usually means the platform-specific package is not installed.');
+        console.error('Try running: npm install --force');
+        console.error('');
+        console.error(`If the problem persists, please report an issue at:`);
+        console.error('https://github.com/katayama8000/expo-push-notification-client-rust/issues');
+        process.exit(1);
+    }
+
+    const result = spawnSync(resolvedBinaryPath, process.argv.slice(2), {
+        stdio: "inherit",
+        windowsHide: false,
+    });
+
+    if (result.error) {
+        console.error('Failed to execute expo-push-notification-client binary:', result.error.message);
+        process.exit(1);
+    }
+
+    process.exit(result.status || 0);
+}
+
+main();
