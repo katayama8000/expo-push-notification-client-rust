@@ -1,0 +1,28 @@
+{
+    "name": "@expo-push-notification-client/mocks-darwin-x64",
+    "version": "1.0.4",
+    "description": "Expo Push Notification Client",
+    "keywords": [
+        "api-bindings",
+        "web-programming"
+    ],
+    "author": "katayama8000 <tattu.0310@gmail.com>",
+    "license": "MIT",
+    "homepage": "https://github.com/katayama8000/expo-push-notification-client-rust",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/katayama8000/expo-push-notification-client-rust.git"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "os": [
+        "darwin"
+    ],
+    "cpu": [
+        "x64"
+    ],
+    "files": [
+        "expo-push-notification-client"
+    ]
+}
