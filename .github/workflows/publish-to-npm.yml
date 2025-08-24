@@ -93,21 +93,41 @@ jobs:
           CC_aarch64_unknown_linux_musl: aarch64-linux-gnu-gcc
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
 
-      - name: Verify binary
+      - name: Build and Immediately Verify Output
         shell: bash
         run: |
-          if [ "${{ matrix.platform }}" = "win32-x64" ] || [ "${{ matrix.platform }}" = "win32-arm64" ]; then
-            BINARY_PATH="target/${{ matrix.target }}/release/expo_push_notification_client.exe"
-          else
-            BINARY_PATH="target/${{ matrix.target }}/release/expo_push_notification_client"
-          fi
+          # 1. バイナリをビルドする
+          echo "--- Starting build ---"
+          cargo build --release --target ${{ matrix.target }}
           
-          if [ ! -f "$BINARY_PATH" ]; then
-            echo "Binary not found at $BINARY_PATH"
+          # 2. ビルドコマンドの終了コードを確認する (0なら成功)
+          BUILD_EXIT_CODE=$?
+          echo "Build command finished with exit code: $BUILD_EXIT_CODE"
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "::error::Cargo build command failed with a non-zero exit code."
+            # 失敗した場合は、生成された可能性のあるディレクトリの中身も表示してみる
+            ls -lR target
+            exit $BUILD_EXIT_CODE
+          fi
+
+          # 3. バイナリがあるはずのディレクトリの中身を詳細にリストアップする
+          echo "--- Listing contents of target/${{ matrix.target }}/release/ ---"
+          ls -lR "target/${{ matrix.target }}/release"
+
+          # 4. 正しいファイル名で最終確認を行う
+          echo "--- Checking for existence of the specific binary ---"
+          BINARY_PATH="target/${{ matrix.target }}/release/expo_push_notification_client"
+          
+          if [ -f "$BINARY_PATH" ]; then
+            echo "✅ SUCCESS: Binary found at $BINARY_PATH"
+            ls -l "$BINARY_PATH"
+          else
+            echo "::error::❌ FAILURE: Binary still not found at $BINARY_PATH"
+            # 見つからなかった場合、targetディレクトリ全体を検索してみる
+            echo "--- Searching for the binary in the entire 'target' directory ---"
+            find target -name "expo_push_notification_client*"
             exit 1
           fi
-          
-          ls -la "$BINARY_PATH"
 
       - name: Prepare platform package
         shell: bash
