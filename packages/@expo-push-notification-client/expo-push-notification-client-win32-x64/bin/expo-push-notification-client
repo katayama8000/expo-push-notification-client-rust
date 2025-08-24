@@ -2,7 +2,6 @@
 
 const { platform, arch, env } = process;
 const { spawnSync } = require("child_process");
-const { resolve } = require("path");
 
 const PLATFORMS = {
     win32: {
