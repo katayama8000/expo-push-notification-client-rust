@@ -60,8 +60,6 @@ Additionally, you can further customize the ExpoPushMessage by adding more optio
 ```rust
 use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, InterruptionLevel};
 
-// ...
-
 // Build Expo Push Message with detailed configurations
 #[derive(Serialize)]
 struct Data {
