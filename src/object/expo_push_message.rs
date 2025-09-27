@@ -158,23 +158,11 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    /// Sets whether the notification should cause the iOS app to start in the background.
-    ///
-    /// When this is set to true, the notification will cause the iOS app to start in the background to run a background task.
-    /// This is an iOS-only feature.
-    ///
-    /// See: <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
     pub fn content_available(mut self, content_available: bool) -> Self {
         self._content_available = Some(content_available);
         self
     }
 
-    /// Sets the importance and delivery timing of a notification (iOS only).
-    ///
-    /// The importance and delivery timing of a notification.
-    /// This is an iOS-only feature.
-    ///
-    /// See: <https://docs.expo.dev/push-notifications/sending-notifications/#formats>
     pub fn interruption_level<S>(mut self, interruption_level: S) -> Self
     where
         S: Into<String>,
