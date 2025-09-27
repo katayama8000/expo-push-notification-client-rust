@@ -1,6 +1,6 @@
 [package]
 name = "expo_push_notification_client"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2021"
 readme = "README.md"
 authors = ["katayama8000 <https://github.com/katayama8000>"]
