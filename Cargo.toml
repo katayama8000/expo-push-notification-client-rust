@@ -19,19 +19,19 @@ default-tls = ["reqwest/default-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
 
 [dependencies]
-async-compression = { version = "0.4.24", features = ["gzip", "tokio"] }
-regex = "1.11.1"
-reqwest = { version = "0.12.20", default-features = false, features = [
+async-compression = { version = "0.4.32", features = ["gzip", "tokio"] }
+regex = "1.11.3"
+reqwest = { version = "0.12.23", default-features = false, features = [
     "json",
     "gzip",
 ] }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-serde_with = "3.13.0"
-thiserror = "2.0.12"
+serde = { version = "1.0.227", features = ["derive"] }
+serde_json = "1.0.145"
+serde_with = "3.14.1"
+thiserror = "2.0.16"
 tokio = { version = "1.45.1", features = ["io-util"] }
 
 [dev-dependencies]
-anyhow = "1.0.98"
+anyhow = "1.0.100"
 mockito = "1.7.0"
 tokio = { version = "1.45.0", features = ["full"] }
