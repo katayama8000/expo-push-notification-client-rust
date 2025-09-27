@@ -397,7 +397,8 @@ mod tests {
             }
         );
 
-        let serialized = serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
         let expected_json = json!({
             "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
             "title": "Test",
