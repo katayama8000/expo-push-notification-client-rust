@@ -24,6 +24,7 @@ pub struct ExpoPushMessage {
     mutable_content: Option<bool>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
+    interruption_level: Option<String>,
 }
 
 impl ExpoPushMessage {
@@ -52,6 +53,7 @@ pub struct ExpoPushMessageBuilder {
     category_id: Option<String>,
     mutable_content: Option<bool>,
     _content_available: Option<bool>,
+    interruption_level: Option<String>,
 }
 
 impl ExpoPushMessageBuilder {
@@ -71,6 +73,7 @@ impl ExpoPushMessageBuilder {
             category_id: None,
             mutable_content: None,
             _content_available: None,
+            interruption_level: None,
         }
     }
 
@@ -155,11 +158,16 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    // for IOS only
-    // When this is set to true, the notification will cause the iOS app to start in the background to run a background task.
-    // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
     pub fn content_available(mut self, content_available: bool) -> Self {
         self._content_available = Some(content_available);
+        self
+    }
+
+    pub fn interruption_level<S>(mut self, interruption_level: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.interruption_level = Some(interruption_level.into());
         self
     }
 
@@ -174,6 +182,10 @@ impl ExpoPushMessageBuilder {
 
         if !self.is_valid_sound() {
             return Err(ValidationError::InvalidSound);
+        }
+
+        if !self.is_valid_interruption_level() {
+            return Err(ValidationError::InvalidInterruptionLevel);
         }
 
         let message = ExpoPushMessage {
@@ -191,6 +203,7 @@ impl ExpoPushMessageBuilder {
             category_id: self.category_id,
             mutable_content: self.mutable_content,
             _content_available: self._content_available,
+            interruption_level: self.interruption_level,
         };
 
         Ok(message)
@@ -223,6 +236,13 @@ impl ExpoPushMessageBuilder {
 
     fn is_valid_sound(&self) -> bool {
         self.sound.as_ref().map(|s| s == "default").unwrap_or(true)
+    }
+
+    fn is_valid_interruption_level(&self) -> bool {
+        self.interruption_level
+            .as_ref()
+            .map(|l| l == "active" || l == "critical" || l == "passive" || l == "time-sensitive")
+            .unwrap_or(true)
     }
 }
 
@@ -280,6 +300,7 @@ mod tests {
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
                 _content_available: Some(true),
+                interruption_level: None,
             }
         );
 
@@ -341,5 +362,56 @@ mod tests {
             .build();
 
         assert_eq!(message, Err(ValidationError::InvalidSound));
+    }
+
+    #[test]
+    fn expo_push_message_builder_invalid_interruption_level() {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .interruption_level("invalid_interruption_level")
+            .build();
+
+        assert_eq!(message, Err(ValidationError::InvalidInterruptionLevel));
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_interruption_level() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .body("Test message")
+            .interruption_level("time-sensitive")
+            .build()?;
+
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                title: Some("Test".to_string()),
+                body: Some("Test message".to_string()),
+                data: None,
+                ttl: None,
+                expiration: None,
+                priority: None,
+                subtitle: None,
+                sound: None,
+                badge: None,
+                channel_id: None,
+                category_id: None,
+                mutable_content: None,
+                _content_available: None,
+                interruption_level: Some("time-sensitive".to_string()),
+            }
+        );
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_json = json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "title": "Test",
+            "body": "Test message",
+            "interruptionLevel": "time-sensitive"
+        });
+
+        assert_eq!(serialized, expected_json);
+        Ok(())
     }
 }
