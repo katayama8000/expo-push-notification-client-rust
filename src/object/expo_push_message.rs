@@ -4,6 +4,18 @@ use serde_with::skip_serializing_none;
 
 use crate::error::ValidationError;
 
+/// iOS-only interruption level for push notifications
+/// Corresponds to UNNotificationInterruptionLevel enumeration cases
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub enum InterruptionLevel {
+    Active,
+    Critical,
+    Passive,
+    #[serde(rename = "time-sensitive")]
+    TimeSensitive,
+}
+
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -24,6 +36,7 @@ pub struct ExpoPushMessage {
     mutable_content: Option<bool>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
+    interruption_level: Option<InterruptionLevel>,
 }
 
 impl ExpoPushMessage {
@@ -52,6 +65,7 @@ pub struct ExpoPushMessageBuilder {
     category_id: Option<String>,
     mutable_content: Option<bool>,
     _content_available: Option<bool>,
+    interruption_level: Option<InterruptionLevel>,
 }
 
 impl ExpoPushMessageBuilder {
@@ -71,6 +85,7 @@ impl ExpoPushMessageBuilder {
             category_id: None,
             mutable_content: None,
             _content_available: None,
+            interruption_level: None,
         }
     }
 
@@ -163,6 +178,14 @@ impl ExpoPushMessageBuilder {
         self
     }
 
+    // for iOS only
+    // The importance and delivery timing of a notification.
+    // <https://docs.expo.dev/push-notifications/sending-notifications/#formats>
+    pub fn interruption_level(mut self, interruption_level: InterruptionLevel) -> Self {
+        self.interruption_level = Some(interruption_level);
+        self
+    }
+
     pub fn build(self) -> Result<ExpoPushMessage, ValidationError> {
         if !self.is_valid_expo_push_token() {
             return Err(ValidationError::InvalidToken);
@@ -191,6 +214,7 @@ impl ExpoPushMessageBuilder {
             category_id: self.category_id,
             mutable_content: self.mutable_content,
             _content_available: self._content_available,
+            interruption_level: self.interruption_level,
         };
 
         Ok(message)
@@ -280,6 +304,7 @@ mod tests {
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
                 _content_available: Some(true),
+                interruption_level: None,
             }
         );
 
@@ -341,5 +366,46 @@ mod tests {
             .build();
 
         assert_eq!(message, Err(ValidationError::InvalidSound));
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_interruption_level() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .body("Test message")
+            .interruption_level(InterruptionLevel::TimeSensitive)
+            .build()?;
+
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                title: Some("Test".to_string()),
+                body: Some("Test message".to_string()),
+                data: None,
+                ttl: None,
+                expiration: None,
+                priority: None,
+                subtitle: None,
+                sound: None,
+                badge: None,
+                channel_id: None,
+                category_id: None,
+                mutable_content: None,
+                _content_available: None,
+                interruption_level: Some(InterruptionLevel::TimeSensitive),
+            }
+        );
+
+        let serialized = serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_json = json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "title": "Test",
+            "body": "Test message",
+            "interruptionLevel": "time-sensitive"
+        });
+
+        assert_eq!(serialized, expected_json);
+        Ok(())
     }
 }
