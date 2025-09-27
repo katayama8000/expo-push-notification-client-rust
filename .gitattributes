@@ -1,0 +1,6 @@
+*.md linguist-detectable=true
+*.md linguist-language=markdown
+*.yml linguist-detectable=true
+*.yml linguist-language=yaml
+*.toml linguist-detectable=true
+*.toml linguist-language=toml
