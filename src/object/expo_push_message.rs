@@ -4,18 +4,6 @@ use serde_with::skip_serializing_none;
 
 use crate::error::ValidationError;
 
-/// iOS-only interruption level for push notifications
-/// Corresponds to UNNotificationInterruptionLevel enumeration cases
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(rename_all = "kebab-case")]
-pub enum InterruptionLevel {
-    Active,
-    Critical,
-    Passive,
-    #[serde(rename = "time-sensitive")]
-    TimeSensitive,
-}
-
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
@@ -36,7 +24,7 @@ pub struct ExpoPushMessage {
     mutable_content: Option<bool>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
-    interruption_level: Option<InterruptionLevel>,
+    interruption_level: Option<String>,
 }
 
 impl ExpoPushMessage {
@@ -65,7 +53,7 @@ pub struct ExpoPushMessageBuilder {
     category_id: Option<String>,
     mutable_content: Option<bool>,
     _content_available: Option<bool>,
-    interruption_level: Option<InterruptionLevel>,
+    interruption_level: Option<String>,
 }
 
 impl ExpoPushMessageBuilder {
@@ -187,8 +175,11 @@ impl ExpoPushMessageBuilder {
     /// This is an iOS-only feature.
     ///
     /// See: <https://docs.expo.dev/push-notifications/sending-notifications/#formats>
-    pub fn interruption_level(mut self, interruption_level: InterruptionLevel) -> Self {
-        self.interruption_level = Some(interruption_level);
+    pub fn interruption_level<S>(mut self, interruption_level: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.interruption_level = Some(interruption_level.into());
         self
     }
 
@@ -203,6 +194,10 @@ impl ExpoPushMessageBuilder {
 
         if !self.is_valid_sound() {
             return Err(ValidationError::InvalidSound);
+        }
+
+        if !self.is_valid_interruption_level() {
+            return Err(ValidationError::InvalidInterruptionLevel);
         }
 
         let message = ExpoPushMessage {
@@ -253,6 +248,13 @@ impl ExpoPushMessageBuilder {
 
     fn is_valid_sound(&self) -> bool {
         self.sound.as_ref().map(|s| s == "default").unwrap_or(true)
+    }
+
+    fn is_valid_interruption_level(&self) -> bool {
+        self.interruption_level
+            .as_ref()
+            .map(|l| l == "active" || l == "critical" || l == "passive" || l == "time-sensitive")
+            .unwrap_or(true)
     }
 }
 
@@ -375,11 +377,20 @@ mod tests {
     }
 
     #[test]
+    fn expo_push_message_builder_invalid_interruption_level() {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .interruption_level("invalid_interruption_level")
+            .build();
+
+        assert_eq!(message, Err(ValidationError::InvalidInterruptionLevel));
+    }
+
+    #[test]
     fn test_expo_push_message_builder_with_interruption_level() -> Result<(), ValidationError> {
         let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
             .title("Test")
             .body("Test message")
-            .interruption_level(InterruptionLevel::TimeSensitive)
+            .interruption_level("time-sensitive")
             .build()?;
 
         assert_eq!(
@@ -399,7 +410,7 @@ mod tests {
                 category_id: None,
                 mutable_content: None,
                 _content_available: None,
-                interruption_level: Some(InterruptionLevel::TimeSensitive),
+                interruption_level: Some("time-sensitive".to_string()),
             }
         );
 

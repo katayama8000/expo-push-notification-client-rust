@@ -30,6 +30,8 @@ pub enum ValidationError {
     InvalidPriority,
     #[error("Invalid sound")]
     InvalidSound,
+    #[error("Invalid interruption level")]
+    InvalidInterruptionLevel,
 }
 
 #[cfg(test)]
@@ -63,5 +65,9 @@ mod tests {
             "Invalid priority"
         );
         assert_eq!(ValidationError::InvalidSound.to_string(), "Invalid sound");
+        assert_eq!(
+            ValidationError::InvalidInterruptionLevel.to_string(),
+            "Invalid interruption level"
+        );
     }
 }
