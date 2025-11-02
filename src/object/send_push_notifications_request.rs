@@ -31,7 +31,11 @@ impl serde::Serialize for SendPushNotificationsRequest {
     where
         S: serde::Serializer,
     {
-        self.0.serialize(serializer)
+        if self.0.len() == 1 {
+            self.0[0].serialize(serializer)
+        } else {
+            self.0.serialize(serializer)
+        }
     }
 }
 

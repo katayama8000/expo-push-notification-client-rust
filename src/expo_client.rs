@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use async_compression::tokio::write::GzipEncoder;
 use reqwest::{
-    header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE},
+    header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE},
     Method,
 };
 use tokio::io::AsyncWriteExt;
@@ -39,11 +39,15 @@ impl Expo {
     }
 
     pub fn new_with_base_url(access_token: Option<String>, base_url: &str) -> Self {
+        let mut headers = HeaderMap::new();
+        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+
         Self {
             access_token,
             base_url: base_url.to_string(),
             client: reqwest::Client::builder()
                 .gzip(true)
+                .default_headers(headers)
                 .build()
                 .expect("Client::new()"),
         }
@@ -558,7 +562,7 @@ mod tests {
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
-            .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}]"#)
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
             .with_status(200)
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
@@ -641,7 +645,7 @@ mod tests {
                 .mock("POST", "/--/api/v2/push/send")
                 .match_header("accept-encoding", "gzip")
                 .match_header("content-type", "application/json")
-                .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}]"#)
+                .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
                 .with_status(200)
                 .with_header("content-type", "application/json; charset=utf-8")
                 .with_body(
@@ -688,7 +692,7 @@ mod tests {
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
-            .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}]"#)
+            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
             .with_status(401)
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
@@ -796,9 +800,9 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_gzip_len_gt_1024() -> anyhow::Result<()> {
         let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(24);
-        let request = serde_json::json!([{"to": to.clone()}]);
+        let request = serde_json::json!({ "to": to.clone() });
         let request = serde_json::to_vec(&request)?;
-        assert_eq!(request.len(), 1066);
+        assert_eq!(request.len(), 1064);
 
         let mut server = mockito::Server::new_async().await;
         let mock = server
@@ -842,9 +846,9 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_gzip_len_lte_1024() -> anyhow::Result<()> {
         let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(23);
-        let request = serde_json::json!([{"to": to.clone()}]);
+        let request = serde_json::json!({ "to": to.clone() });
         let request = serde_json::to_vec(&request)?;
-        assert_eq!(request.len(), 1022);
+        assert_eq!(request.len(), 1020);
 
         let mut server = mockito::Server::new_async().await;
         let mock = server
