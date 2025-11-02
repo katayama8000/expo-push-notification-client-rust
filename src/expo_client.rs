@@ -558,7 +558,7 @@ mod tests {
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
-            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}]"#)
             .with_status(200)
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
@@ -641,7 +641,7 @@ mod tests {
                 .mock("POST", "/--/api/v2/push/send")
                 .match_header("accept-encoding", "gzip")
                 .match_header("content-type", "application/json")
-                .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+                .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}]"#)
                 .with_status(200)
                 .with_header("content-type", "application/json; charset=utf-8")
                 .with_body(
@@ -688,7 +688,7 @@ mod tests {
             .mock("POST", "/--/api/v2/push/send")
             .match_header("accept-encoding", "gzip")
             .match_header("content-type", "application/json")
-            .match_body(r#"{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}"#)
+            .match_body(r#"[{"to":["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"]}]"#)
             .with_status(401)
             .with_header("content-type", "application/json; charset=utf-8")
             .with_body(
@@ -796,9 +796,9 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_gzip_len_gt_1024() -> anyhow::Result<()> {
         let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(24);
-        let request = serde_json::json!({ "to": to });
+        let request = serde_json::json!([{"to": to.clone()}]);
         let request = serde_json::to_vec(&request)?;
-        assert_eq!(request.len(), 1064);
+        assert_eq!(request.len(), 1066);
 
         let mut server = mockito::Server::new_async().await;
         let mock = server
@@ -842,9 +842,9 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_gzip_len_lte_1024() -> anyhow::Result<()> {
         let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(23);
-        let request = serde_json::json!({ "to": to });
+        let request = serde_json::json!([{"to": to.clone()}]);
         let request = serde_json::to_vec(&request)?;
-        assert_eq!(request.len(), 1020);
+        assert_eq!(request.len(), 1022);
 
         let mut server = mockito::Server::new_async().await;
         let mock = server
