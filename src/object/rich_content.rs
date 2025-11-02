@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct RichContent {
-    image: Option<String>,
+    pub image: Option<String>,
 }
 
 impl RichContent {
