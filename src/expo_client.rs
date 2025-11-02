@@ -797,7 +797,7 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_gzip_len_gt_1024() -> anyhow::Result<()> {
         let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(24);
-        let request = serde_json::json!({ "to": to.clone() });
+        let request = serde_json::json!({ "to": to });
         let request = serde_json::to_vec(&request)?;
         assert_eq!(request.len(), 1064);
 
@@ -843,7 +843,7 @@ mod tests {
     #[tokio::test]
     async fn test_send_push_notifications_gzip_len_lte_1024() -> anyhow::Result<()> {
         let to = ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"].repeat(23);
-        let request = serde_json::json!({ "to": to.clone() });
+        let request = serde_json::json!({ "to": to });
         let request = serde_json::to_vec(&request)?;
         assert_eq!(request.len(), 1020);
 
