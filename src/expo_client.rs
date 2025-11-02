@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use async_compression::tokio::write::GzipEncoder;
 use reqwest::{
-    header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE},
+    header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE},
     Method,
 };
 use tokio::io::AsyncWriteExt;
@@ -217,6 +217,7 @@ impl Expo {
         let client = &self.client;
 
         let mut headers = HeaderMap::new();
+        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         if let Some(token) = access_token {
             headers.insert(
