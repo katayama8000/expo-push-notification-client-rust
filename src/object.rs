@@ -15,4 +15,5 @@ pub use self::expo_push_receipt::*;
 pub use self::expo_push_receipt_id::*;
 pub use self::expo_push_success_ticket::*;
 pub use self::expo_push_ticket::*;
+pub use self::rich_content::*;
 pub use self::send_push_notifications_request::*;
