@@ -48,6 +48,7 @@ impl Expo {
             client: reqwest::Client::builder()
                 .gzip(true)
                 .default_headers(headers)
+                .redirect(reqwest::redirect::Policy::none())
                 .build()
                 .expect("Client::new()"),
         }
