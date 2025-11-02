@@ -20,16 +20,16 @@ rustls-tls = ["reqwest/rustls-tls"]
 
 [dependencies]
 async-compression = { version = "0.4.32", features = ["gzip", "tokio"] }
-regex = "1.11.3"
-reqwest = { version = "0.12.23", default-features = false, features = [
+regex = "1.12.2"
+reqwest = { version = "0.12.24", default-features = false, features = [
     "json",
     "gzip",
 ] }
-serde = { version = "1.0.227", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-serde_with = "3.14.1"
-thiserror = "2.0.16"
-tokio = { version = "1.45.1", features = ["io-util"] }
+serde_with = "3.15.1"
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", features = ["io-util"] }
 
 [dev-dependencies]
 anyhow = "1.0.100"
