@@ -39,16 +39,11 @@ impl Expo {
     }
 
     pub fn new_with_base_url(access_token: Option<String>, base_url: &str) -> Self {
-        let mut headers = HeaderMap::new();
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-
         Self {
             access_token,
             base_url: base_url.to_string(),
             client: reqwest::Client::builder()
                 .gzip(true)
-                .default_headers(headers)
-                .redirect(reqwest::redirect::Policy::none())
                 .build()
                 .expect("Client::new()"),
         }
@@ -222,6 +217,7 @@ impl Expo {
         let client = &self.client;
 
         let mut headers = HeaderMap::new();
+        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         if let Some(token) = access_token {
             headers.insert(
