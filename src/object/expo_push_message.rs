@@ -3,6 +3,7 @@ use serde_json::Value;
 use serde_with::skip_serializing_none;
 
 use crate::error::ValidationError;
+use crate::object::rich_content::RichContent;
 
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
@@ -22,6 +23,7 @@ pub struct ExpoPushMessage {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    rich_content: Option<RichContent>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
     interruption_level: Option<String>,
@@ -52,6 +54,7 @@ pub struct ExpoPushMessageBuilder {
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
+    rich_content: Option<RichContent>,
     _content_available: Option<bool>,
     interruption_level: Option<String>,
 }
@@ -72,6 +75,7 @@ impl ExpoPushMessageBuilder {
             channel_id: None,
             category_id: None,
             mutable_content: None,
+            rich_content: None,
             _content_available: None,
             interruption_level: None,
         }
@@ -158,6 +162,11 @@ impl ExpoPushMessageBuilder {
         self
     }
 
+    pub fn rich_content(mut self, rich_content: RichContent) -> Self {
+        self.rich_content = Some(rich_content);
+        self
+    }
+
     pub fn content_available(mut self, content_available: bool) -> Self {
         self._content_available = Some(content_available);
         self
@@ -202,6 +211,7 @@ impl ExpoPushMessageBuilder {
             channel_id: self.channel_id,
             category_id: self.category_id,
             mutable_content: self.mutable_content,
+            rich_content: self.rich_content,
             _content_available: self._content_available,
             interruption_level: self.interruption_level,
         };
@@ -249,6 +259,7 @@ impl ExpoPushMessageBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::object::rich_content::RichContent;
     use serde_json::json;
 
     #[test]
@@ -299,6 +310,7 @@ mod tests {
                 channel_id: Some("channel_id".to_string()),
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
+                rich_content: None,
                 _content_available: Some(true),
                 interruption_level: None,
             }
@@ -332,6 +344,94 @@ mod tests {
         let expected_message =
             serde_json::to_value(&expected_json).map_err(|_| ValidationError::InvalidData)?;
         assert_eq!(serialized_message, expected_message);
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_rich_content() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .body("Test message")
+            .rich_content(RichContent::new().image("https://example.com/image.png"))
+            .build()?;
+
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                title: Some("Test".to_string()),
+                body: Some("Test message".to_string()),
+                data: None,
+                ttl: None,
+                expiration: None,
+                priority: None,
+                subtitle: None,
+                sound: None,
+                badge: None,
+                channel_id: None,
+                category_id: None,
+                mutable_content: None,
+                rich_content: Some(RichContent::new().image("https://example.com/image.png")),
+                _content_available: None,
+                interruption_level: None,
+            }
+        );
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_json = json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "title": "Test",
+            "body": "Test message",
+            "richContent": {
+                "image": "https://example.com/image.png"
+            }
+        });
+
+        assert_eq!(serialized, expected_json);
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_empty_rich_content() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .body("Test message")
+            .rich_content(RichContent::new())
+            .build()?;
+
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                title: Some("Test".to_string()),
+                body: Some("Test message".to_string()),
+                data: None,
+                ttl: None,
+                expiration: None,
+                priority: None,
+                subtitle: None,
+                sound: None,
+                badge: None,
+                channel_id: None,
+                category_id: None,
+                mutable_content: None,
+                rich_content: Some(RichContent::new()),
+                _content_available: None,
+                interruption_level: None,
+            }
+        );
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_json = json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "title": "Test",
+            "body": "Test message",
+            "richContent": {}
+        });
+
+        assert_eq!(serialized, expected_json);
         Ok(())
     }
 
@@ -397,6 +497,7 @@ mod tests {
                 channel_id: None,
                 category_id: None,
                 mutable_content: None,
+                rich_content: None,
                 _content_available: None,
                 interruption_level: Some("time-sensitive".to_string()),
             }

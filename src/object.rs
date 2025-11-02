@@ -5,6 +5,7 @@ mod expo_push_receipt;
 mod expo_push_receipt_id;
 mod expo_push_success_ticket;
 mod expo_push_ticket;
+mod rich_content;
 mod send_push_notifications_request;
 
 pub use self::details::*;
