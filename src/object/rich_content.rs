@@ -10,9 +10,7 @@ pub struct RichContent {
 
 impl RichContent {
     pub fn new() -> Self {
-        RichContent {
-            image: None,
-        }
+        RichContent { image: None }
     }
 
     pub fn image<S>(mut self, image: S) -> Self
