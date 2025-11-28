@@ -58,7 +58,7 @@ expo.get_push_notification_receipts(expo_push_ids).await;
 ```
 Additionally, you can further customize the ExpoPushMessage by adding more options. Refer to the [docs](https://docs.expo.dev/push-notifications/sending-notifications/#formats) for more details.
 ```rust
-use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage};
+use expo_push_notification_client::{Expo, ExpoClientOptions, ExpoPushMessage, Priority, Sound, InterruptionLevel};
 
 // Build Expo Push Message with detailed configurations
 #[derive(Serialize)]
@@ -71,14 +71,14 @@ let expo_push_message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxx
     .data(&Data { data: "data".to_string()})?
     .ttl(100)
     .expiration(100)
-    .priority("high")
+    .priority(Priority::High)
     .subtitle("subtitle")
-    .sound("default")
+    .sound(Sound::Default)
     .badge(1)
     .channel_id("channel_id")
     .category_id("category_id")
     .mutable_content(true)
-    .interruption_level("time-sensitive")
+    .interruption_level(InterruptionLevel::TimeSensitive)
     .title("title")
     .build()?;
 ```
