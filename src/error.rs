@@ -26,12 +26,6 @@ pub enum ValidationError {
     InvalidData,
     #[error("Invalid token")]
     InvalidToken,
-    #[error("Invalid priority")]
-    InvalidPriority,
-    #[error("Invalid sound")]
-    InvalidSound,
-    #[error("Invalid interruption level")]
-    InvalidInterruptionLevel,
 }
 
 #[cfg(test)]
@@ -60,14 +54,5 @@ mod tests {
         );
 
         assert_eq!(ValidationError::InvalidToken.to_string(), "Invalid token");
-        assert_eq!(
-            ValidationError::InvalidPriority.to_string(),
-            "Invalid priority"
-        );
-        assert_eq!(ValidationError::InvalidSound.to_string(), "Invalid sound");
-        assert_eq!(
-            ValidationError::InvalidInterruptionLevel.to_string(),
-            "Invalid interruption level"
-        );
     }
 }
