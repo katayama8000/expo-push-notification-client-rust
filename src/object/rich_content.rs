@@ -26,17 +26,20 @@ impl RichContent {
 mod tests {
     use super::RichContent;
     use serde_json;
+    
     #[test]
-    fn test_serialize() {
+    fn test_serialize() -> Result<(), serde_json::Error> {
         let content = RichContent::new().image("https://example.com/image.png");
-        let serialized = serde_json::to_string(&content).unwrap();
+        let serialized = serde_json::to_string(&content)?;
         assert_eq!(serialized, r#"{"image":"https://example.com/image.png"}"#);
+        Ok(())
     }
 
     #[test]
-    fn test_serialize_none() {
+    fn test_serialize_none() -> Result<(), serde_json::Error> {
         let content = RichContent::new();
-        let serialized = serde_json::to_string(&content).unwrap();
+        let serialized = serde_json::to_string(&content)?;
         assert_eq!(serialized, r#"{}"#);
+        Ok(())
     }
 }
