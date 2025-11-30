@@ -31,3 +31,39 @@ impl<'de> Deserialize<'de> for Sound {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serialization() -> Result<(), serde_json::Error> {
+        assert_eq!(serde_json::to_string(&Sound::Default)?, "\"default\"");
+        assert_eq!(
+            serde_json::to_string(&Sound::Custom("bells.wav".to_string()))?,
+            "\"bells.wav\""
+        );
+        assert_eq!(
+            serde_json::to_string(&Sound::Custom("custom_sound.mp3".to_string()))?,
+            "\"custom_sound.mp3\""
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_deserialization() -> Result<(), serde_json::Error> {
+        assert_eq!(
+            serde_json::from_str::<Sound>("\"default\"")?,
+            Sound::Default
+        );
+        assert_eq!(
+            serde_json::from_str::<Sound>("\"bells.wav\"")?,
+            Sound::Custom("bells.wav".to_string())
+        );
+        assert_eq!(
+            serde_json::from_str::<Sound>("\"custom_sound.mp3\"")?,
+            Sound::Custom("custom_sound.mp3".to_string())
+        );
+        Ok(())
+    }
+}
