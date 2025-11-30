@@ -3,7 +3,10 @@ use serde_json::Value;
 use serde_with::skip_serializing_none;
 
 use crate::error::ValidationError;
+use crate::object::interruption_level::InterruptionLevel;
+use crate::object::priority::Priority;
 use crate::object::rich_content::RichContent;
+use crate::object::sound::Sound;
 
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
@@ -16,9 +19,9 @@ pub struct ExpoPushMessage {
     data: Option<Value>,
     ttl: Option<u64>,
     expiration: Option<u64>,
-    priority: Option<String>,
+    priority: Option<Priority>,
     subtitle: Option<String>,
-    sound: Option<String>,
+    sound: Option<Sound>,
     badge: Option<u64>,
     channel_id: Option<String>,
     category_id: Option<String>,
@@ -26,7 +29,7 @@ pub struct ExpoPushMessage {
     rich_content: Option<RichContent>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
-    interruption_level: Option<String>,
+    interruption_level: Option<InterruptionLevel>,
 }
 
 impl ExpoPushMessage {
@@ -47,16 +50,16 @@ pub struct ExpoPushMessageBuilder {
     data: Option<Value>,
     ttl: Option<u64>,
     expiration: Option<u64>,
-    priority: Option<String>,
+    priority: Option<Priority>,
     subtitle: Option<String>,
-    sound: Option<String>,
+    sound: Option<Sound>,
     badge: Option<u64>,
     channel_id: Option<String>,
     category_id: Option<String>,
     mutable_content: Option<bool>,
     rich_content: Option<RichContent>,
     _content_available: Option<bool>,
-    interruption_level: Option<String>,
+    interruption_level: Option<InterruptionLevel>,
 }
 
 impl ExpoPushMessageBuilder {
@@ -112,11 +115,8 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn priority<S>(mut self, priority: S) -> Self
-    where
-        S: Into<String>,
-    {
-        self.priority = Some(priority.into());
+    pub fn priority(mut self, priority: Priority) -> Self {
+        self.priority = Some(priority);
         self
     }
 
@@ -128,11 +128,8 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn sound<S>(mut self, sound: S) -> Self
-    where
-        S: Into<String>,
-    {
-        self.sound = Some(sound.into());
+    pub fn sound(mut self, sound: Sound) -> Self {
+        self.sound = Some(sound);
         self
     }
 
@@ -172,29 +169,14 @@ impl ExpoPushMessageBuilder {
         self
     }
 
-    pub fn interruption_level<S>(mut self, interruption_level: S) -> Self
-    where
-        S: Into<String>,
-    {
-        self.interruption_level = Some(interruption_level.into());
+    pub fn interruption_level(mut self, interruption_level: InterruptionLevel) -> Self {
+        self.interruption_level = Some(interruption_level);
         self
     }
 
     pub fn build(self) -> Result<ExpoPushMessage, ValidationError> {
         if !self.is_valid_expo_push_token() {
             return Err(ValidationError::InvalidToken);
-        }
-
-        if !self.is_valid_priority() {
-            return Err(ValidationError::InvalidPriority);
-        }
-
-        if !self.is_valid_sound() {
-            return Err(ValidationError::InvalidSound);
-        }
-
-        if !self.is_valid_interruption_level() {
-            return Err(ValidationError::InvalidInterruptionLevel);
         }
 
         let message = ExpoPushMessage {
@@ -236,24 +218,6 @@ impl ExpoPushMessageBuilder {
                     .is_match(token)
         })
     }
-
-    fn is_valid_priority(&self) -> bool {
-        self.priority
-            .as_ref()
-            .map(|p| p == "default" || p == "normal" || p == "high")
-            .unwrap_or(true)
-    }
-
-    fn is_valid_sound(&self) -> bool {
-        self.sound.as_ref().map(|s| s == "default").unwrap_or(true)
-    }
-
-    fn is_valid_interruption_level(&self) -> bool {
-        self.interruption_level
-            .as_ref()
-            .map(|l| l == "active" || l == "critical" || l == "passive" || l == "time-sensitive")
-            .unwrap_or(true)
-    }
 }
 
 #[cfg(test)]
@@ -279,9 +243,9 @@ mod tests {
         })?
         .ttl(100)
         .expiration(100)
-        .priority("high")
+        .priority(Priority::High)
         .subtitle("subtitle")
-        .sound("default")
+        .sound(Sound::Default)
         .badge(1)
         .channel_id("channel_id")
         .category_id("category_id")
@@ -303,9 +267,9 @@ mod tests {
                 data: Some(json!({ "data": "data" })),
                 ttl: Some(100),
                 expiration: Some(100),
-                priority: Some("high".to_string()),
+                priority: Some(Priority::High),
                 subtitle: Some("subtitle".to_string()),
-                sound: Some("default".to_string()),
+                sound: Some(Sound::Default),
                 badge: Some(1),
                 channel_id: Some("channel_id".to_string()),
                 category_id: Some("category_id".to_string()),
@@ -447,38 +411,11 @@ mod tests {
     }
 
     #[test]
-    fn test_expo_push_message_builder_invalid_priority() {
-        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
-            .priority("invalid_priority")
-            .build();
-
-        assert_eq!(message, Err(ValidationError::InvalidPriority));
-    }
-
-    #[test]
-    fn expo_push_message_builder_invalid_sound() {
-        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
-            .sound("invalid_sound")
-            .build();
-
-        assert_eq!(message, Err(ValidationError::InvalidSound));
-    }
-
-    #[test]
-    fn expo_push_message_builder_invalid_interruption_level() {
-        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
-            .interruption_level("invalid_interruption_level")
-            .build();
-
-        assert_eq!(message, Err(ValidationError::InvalidInterruptionLevel));
-    }
-
-    #[test]
     fn test_expo_push_message_builder_with_interruption_level() -> Result<(), ValidationError> {
         let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
             .title("Test")
             .body("Test message")
-            .interruption_level("time-sensitive")
+            .interruption_level(InterruptionLevel::TimeSensitive)
             .build()?;
 
         assert_eq!(
@@ -499,7 +436,7 @@ mod tests {
                 mutable_content: None,
                 rich_content: None,
                 _content_available: None,
-                interruption_level: Some("time-sensitive".to_string()),
+                interruption_level: Some(InterruptionLevel::TimeSensitive),
             }
         );
 
@@ -513,6 +450,70 @@ mod tests {
         });
 
         assert_eq!(serialized, expected_json);
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_all_priorities() -> Result<(), ValidationError> {
+        for (priority, expected_str) in [
+            (Priority::Default, "default"),
+            (Priority::Normal, "normal"),
+            (Priority::High, "high"),
+        ] {
+            let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+                .priority(priority)
+                .build()?;
+
+            let serialized =
+                serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+            assert_eq!(serialized["priority"], expected_str);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_all_interruption_levels() -> Result<(), ValidationError>
+    {
+        for (level, expected_str) in [
+            (InterruptionLevel::Active, "active"),
+            (InterruptionLevel::Critical, "critical"),
+            (InterruptionLevel::Passive, "passive"),
+            (InterruptionLevel::TimeSensitive, "time-sensitive"),
+        ] {
+            let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+                .interruption_level(level)
+                .build()?;
+
+            let serialized =
+                serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+            assert_eq!(serialized["interruptionLevel"], expected_str);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_sound() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .sound(Sound::Default)
+            .build()?;
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        assert_eq!(serialized["sound"], "default");
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_custom_sound() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .sound(Sound::Custom("bells.wav".to_string()))
+            .build()?;
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        assert_eq!(serialized["sound"], "bells.wav");
         Ok(())
     }
 }
