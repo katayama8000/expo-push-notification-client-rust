@@ -503,4 +503,17 @@ mod tests {
         assert_eq!(serialized["sound"], "default");
         Ok(())
     }
+
+    #[test]
+    fn test_expo_push_message_builder_with_custom_sound() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .sound(Sound::Custom("bells.wav".to_string()))
+            .build()?;
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        assert_eq!(serialized["sound"], "bells.wav");
+        Ok(())
+    }
 }
