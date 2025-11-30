@@ -26,7 +26,7 @@ impl RichContent {
 mod tests {
     use super::RichContent;
     use serde_json;
-    
+
     #[test]
     fn test_serialize() -> Result<(), serde_json::Error> {
         let content = RichContent::new().image("https://example.com/image.png");
