@@ -1,6 +1,6 @@
 # Expo Push Notification Client for Rust
 
-This is an [community](https://docs.expo.dev/push-notifications/sending-notifications/#send-push-notifications-using-a-server) Expo Push Notification Client for Rust.
+This is a [community](https://docs.expo.dev/push-notifications/sending-notifications/#send-push-notifications-using-a-server) Expo Push Notification Client for Rust.
 
 [![ci](https://github.com/katayama8000/expo-push-notification-client-rust/workflows/ci/badge.svg)](https://github.com/katayama8000/expo-push-notification-client-rust/actions)
 [![crates.io](https://img.shields.io/crates/v/expo_push_notification_client)](https://crates.io/crates/expo_push_notification_client)
