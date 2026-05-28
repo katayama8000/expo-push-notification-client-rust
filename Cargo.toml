@@ -1,6 +1,6 @@
 [package]
 name = "expo_push_notification_client"
-version = "2.0.1"
+version = "2.0.2"
 edition = "2021"
 readme = "README.md"
 authors = ["katayama8000 <https://github.com/katayama8000>"]
@@ -20,19 +20,19 @@ rustls = ["reqwest/rustls"]
 native-tls = ["reqwest/native-tls"]
 
 [dependencies]
-async-compression = { version = "0.4.37", features = ["gzip", "tokio"] }
-regex = "1.12.2"
-reqwest = { version = "0.13.1", default-features = false, features = [
+async-compression = { version = "0.4.42", features = ["gzip", "tokio"] }
+regex = "1.12.3"
+reqwest = { version = "0.13.4", default-features = false, features = [
     "json",
     "gzip",
 ] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
-serde_with = "3.16.1"
-thiserror = "2.0.17"
-tokio = { version = "1.49.0", features = ["io-util"] }
+serde_json = "1.0.150"
+serde_with = "3.20.0"
+thiserror = "2.0.18"
+tokio = { version = "1.52.3", features = ["io-util"] }
 
 [dev-dependencies]
-anyhow = "1.0.100"
-mockito = "1.7.1"
-tokio = { version = "1.45.0", features = ["full"] }
+anyhow = "1.0.102"
+mockito = "1.7.2"
+tokio = { version = "1.52.3", features = ["full"] }
