@@ -27,6 +27,8 @@ pub struct ExpoPushMessage {
     category_id: Option<String>,
     mutable_content: Option<bool>,
     rich_content: Option<RichContent>,
+    collapse_id: Option<String>,
+    tag: Option<String>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
     interruption_level: Option<InterruptionLevel>,
@@ -58,6 +60,8 @@ pub struct ExpoPushMessageBuilder {
     category_id: Option<String>,
     mutable_content: Option<bool>,
     rich_content: Option<RichContent>,
+    collapse_id: Option<String>,
+    tag: Option<String>,
     _content_available: Option<bool>,
     interruption_level: Option<InterruptionLevel>,
 }
@@ -79,6 +83,8 @@ impl ExpoPushMessageBuilder {
             category_id: None,
             mutable_content: None,
             rich_content: None,
+            collapse_id: None,
+            tag: None,
             _content_available: None,
             interruption_level: None,
         }
@@ -164,6 +170,22 @@ impl ExpoPushMessageBuilder {
         self
     }
 
+    pub fn collapse_id<S>(mut self, collapse_id: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.collapse_id = Some(collapse_id.into());
+        self
+    }
+
+    pub fn tag<S>(mut self, tag: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.tag = Some(tag.into());
+        self
+    }
+
     pub fn content_available(mut self, content_available: bool) -> Self {
         self._content_available = Some(content_available);
         self
@@ -194,6 +216,8 @@ impl ExpoPushMessageBuilder {
             category_id: self.category_id,
             mutable_content: self.mutable_content,
             rich_content: self.rich_content,
+            collapse_id: self.collapse_id,
+            tag: self.tag,
             _content_available: self._content_available,
             interruption_level: self.interruption_level,
         };
@@ -275,6 +299,8 @@ mod tests {
                 category_id: Some("category_id".to_string()),
                 mutable_content: Some(true),
                 rich_content: None,
+                collapse_id: None,
+                tag: None,
                 _content_available: Some(true),
                 interruption_level: None,
             }
@@ -336,6 +362,8 @@ mod tests {
                 category_id: None,
                 mutable_content: None,
                 rich_content: Some(RichContent::new().image("https://example.com/image.png")),
+                collapse_id: None,
+                tag: None,
                 _content_available: None,
                 interruption_level: None,
             }
@@ -381,6 +409,8 @@ mod tests {
                 category_id: None,
                 mutable_content: None,
                 rich_content: Some(RichContent::new()),
+                collapse_id: None,
+                tag: None,
                 _content_available: None,
                 interruption_level: None,
             }
@@ -435,6 +465,8 @@ mod tests {
                 category_id: None,
                 mutable_content: None,
                 rich_content: None,
+                collapse_id: None,
+                tag: None,
                 _content_available: None,
                 interruption_level: Some(InterruptionLevel::TimeSensitive),
             }
@@ -514,6 +546,53 @@ mod tests {
         let serialized =
             serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
         assert_eq!(serialized["sound"], "bells.wav");
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_collapsing_options() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .body("Test message")
+            .collapse_id("collapse_id")
+            .tag("tag")
+            .build()?;
+
+        assert_eq!(
+            message,
+            ExpoPushMessage {
+                to: vec!["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()],
+                title: Some("Test".to_string()),
+                body: Some("Test message".to_string()),
+                data: None,
+                ttl: None,
+                expiration: None,
+                priority: None,
+                subtitle: None,
+                sound: None,
+                badge: None,
+                channel_id: None,
+                category_id: None,
+                mutable_content: None,
+                rich_content: None,
+                collapse_id: Some("collapse_id".to_string()),
+                tag: Some("tag".to_string()),
+                _content_available: None,
+                interruption_level: None,
+            }
+        );
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_json = json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "title": "Test",
+            "body": "Test message",
+            "collapseId": "collapse_id",
+            "tag": "tag"
+        });
+
+        assert_eq!(serialized, expected_json);
         Ok(())
     }
 }

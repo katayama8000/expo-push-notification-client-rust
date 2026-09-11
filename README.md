@@ -79,6 +79,8 @@ let expo_push_message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxx
     .category_id("category_id")
     .mutable_content(true)
     .interruption_level(InterruptionLevel::TimeSensitive)
+    .collapse_id("collapse_id")
+    .tag("tag")
     .title("title")
     .build()?;
 ```
