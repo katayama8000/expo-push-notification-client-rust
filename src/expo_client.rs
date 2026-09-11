@@ -400,7 +400,8 @@ mod tests {
                 "status": "error",
                 "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
                 "details": {
-                    "error": "DeviceNotRegistered"
+                    "error": "DeviceNotRegistered",
+                    "expoPushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
                 }
             }
         }
@@ -419,7 +420,10 @@ mod tests {
                     ExpoPushReceiptId::from_str("XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")?,
                     ExpoPushReceipt::Error(ExpoPushErrorReceipt {
                         message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
-                        details: Some(Details { error: Some(DetailsErrorType::DeviceNotRegistered) }),
+                        details: Some(Details {
+                            error: Some(DetailsErrorType::DeviceNotRegistered),
+                            expo_push_token: Some("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()),
+                        }),
                     }),
                 );
             map
@@ -653,7 +657,8 @@ mod tests {
                 "status": "error",
                 "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
                 "details": {
-                    "error": "DeviceNotRegistered"
+                    "error": "DeviceNotRegistered",
+                    "expoPushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
                 }
             }
         ]
@@ -675,6 +680,7 @@ mod tests {
                     message: r#""ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" is not a registered push notification recipient"#.to_string(),
                     details: Some(Details {
                         error: Some(DetailsErrorType::DeviceNotRegistered),
+                        expo_push_token: Some("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()),
                     })
                 })]
             );
@@ -764,7 +770,8 @@ mod tests {
           "status": "error",
           "message": "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient",
           "details": {
-            "error": "DeviceNotRegistered"
+            "error": "DeviceNotRegistered",
+            "expoPushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
           }
         },
         {
@@ -783,6 +790,7 @@ mod tests {
                             message: "\"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\" is not a registered push notification recipient".to_string(),
                             details: Some(Details {
                                 error: Some(DetailsErrorType::DeviceNotRegistered),
+                                expo_push_token: Some("ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]".to_string()),
                             })
                         }),
                         ExpoPushTicket::Ok(ExpoPushSuccessTicket {
