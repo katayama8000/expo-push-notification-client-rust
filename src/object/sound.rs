@@ -4,7 +4,7 @@ use serde_with::skip_serializing_none;
 // <https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format>
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Default)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CriticalSound {
     pub critical: Option<bool>,
     pub name: Option<String>,
@@ -155,5 +155,13 @@ mod tests {
             Sound::Critical(CriticalSound::new())
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_unknown_sound_object_is_rejected() {
+        // Without `deny_unknown_fields` every field of `CriticalSound` is optional, so the
+        // untagged representation would match any object and silently discard its contents.
+        assert!(serde_json::from_str::<Sound>(r#"{"unknown":1}"#).is_err());
+        assert!(serde_json::from_str::<Sound>(r#"{"critical":true,"typo":1}"#).is_err());
     }
 }
