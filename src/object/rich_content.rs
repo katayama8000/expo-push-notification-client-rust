@@ -25,7 +25,6 @@ impl RichContent {
 #[cfg(test)]
 mod tests {
     use super::RichContent;
-    use serde_json;
 
     #[test]
     fn test_serialize() -> Result<(), serde_json::Error> {
