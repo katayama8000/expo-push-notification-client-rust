@@ -81,6 +81,12 @@ let expo_push_message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxx
     .interruption_level(InterruptionLevel::TimeSensitive)
     .collapse_id("collapse_id")
     .tag("tag")
+    .thread_id("thread_id")
+    .icon("myicon")
+    .target_content_id("target_content_id")
+    .relevance_score(0.5)
+    .filter_criteria("filter_criteria")
+    .content_available(true)
     .title("title")
     .build()?;
 ```

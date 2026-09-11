@@ -29,6 +29,12 @@ pub struct ExpoPushMessage {
     rich_content: Option<RichContent>,
     collapse_id: Option<String>,
     tag: Option<String>,
+    thread_id: Option<String>,
+    icon: Option<String>,
+    target_content_id: Option<String>,
+    relevance_score: Option<f64>,
+    filter_criteria: Option<String>,
+    content_available: Option<bool>,
     #[serde(rename = "_contentAvailable")]
     _content_available: Option<bool>,
     interruption_level: Option<InterruptionLevel>,
@@ -62,7 +68,12 @@ pub struct ExpoPushMessageBuilder {
     rich_content: Option<RichContent>,
     collapse_id: Option<String>,
     tag: Option<String>,
-    _content_available: Option<bool>,
+    thread_id: Option<String>,
+    icon: Option<String>,
+    target_content_id: Option<String>,
+    relevance_score: Option<f64>,
+    filter_criteria: Option<String>,
+    content_available: Option<bool>,
     interruption_level: Option<InterruptionLevel>,
 }
 
@@ -85,7 +96,12 @@ impl ExpoPushMessageBuilder {
             rich_content: None,
             collapse_id: None,
             tag: None,
-            _content_available: None,
+            thread_id: None,
+            icon: None,
+            target_content_id: None,
+            relevance_score: None,
+            filter_criteria: None,
+            content_available: None,
             interruption_level: None,
         }
     }
@@ -186,8 +202,45 @@ impl ExpoPushMessageBuilder {
         self
     }
 
+    pub fn thread_id<S>(mut self, thread_id: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.thread_id = Some(thread_id.into());
+        self
+    }
+
+    pub fn icon<S>(mut self, icon: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.icon = Some(icon.into());
+        self
+    }
+
+    pub fn target_content_id<S>(mut self, target_content_id: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.target_content_id = Some(target_content_id.into());
+        self
+    }
+
+    pub fn relevance_score(mut self, relevance_score: f64) -> Self {
+        self.relevance_score = Some(relevance_score);
+        self
+    }
+
+    pub fn filter_criteria<S>(mut self, filter_criteria: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.filter_criteria = Some(filter_criteria.into());
+        self
+    }
+
     pub fn content_available(mut self, content_available: bool) -> Self {
-        self._content_available = Some(content_available);
+        self.content_available = Some(content_available);
         self
     }
 
@@ -218,7 +271,13 @@ impl ExpoPushMessageBuilder {
             rich_content: self.rich_content,
             collapse_id: self.collapse_id,
             tag: self.tag,
-            _content_available: self._content_available,
+            thread_id: self.thread_id,
+            icon: self.icon,
+            target_content_id: self.target_content_id,
+            relevance_score: self.relevance_score,
+            filter_criteria: self.filter_criteria,
+            content_available: self.content_available,
+            _content_available: None,
             interruption_level: self.interruption_level,
         };
 
@@ -248,6 +307,7 @@ impl ExpoPushMessageBuilder {
 mod tests {
     use super::*;
     use crate::object::rich_content::RichContent;
+    use crate::object::sound::CriticalSound;
     use serde_json::json;
 
     #[test]
@@ -301,7 +361,13 @@ mod tests {
                 rich_content: None,
                 collapse_id: None,
                 tag: None,
-                _content_available: Some(true),
+                thread_id: None,
+                icon: None,
+                target_content_id: None,
+                relevance_score: None,
+                filter_criteria: None,
+                content_available: Some(true),
+                _content_available: None,
                 interruption_level: None,
             }
         );
@@ -326,7 +392,7 @@ mod tests {
             "channelId": "channel_id",
             "categoryId": "category_id",
             "mutableContent": true,
-            "_contentAvailable": true
+            "contentAvailable": true
         });
 
         let serialized_message =
@@ -364,6 +430,12 @@ mod tests {
                 rich_content: Some(RichContent::new().image("https://example.com/image.png")),
                 collapse_id: None,
                 tag: None,
+                thread_id: None,
+                icon: None,
+                target_content_id: None,
+                relevance_score: None,
+                filter_criteria: None,
+                content_available: None,
                 _content_available: None,
                 interruption_level: None,
             }
@@ -411,6 +483,12 @@ mod tests {
                 rich_content: Some(RichContent::new()),
                 collapse_id: None,
                 tag: None,
+                thread_id: None,
+                icon: None,
+                target_content_id: None,
+                relevance_score: None,
+                filter_criteria: None,
+                content_available: None,
                 _content_available: None,
                 interruption_level: None,
             }
@@ -467,6 +545,12 @@ mod tests {
                 rich_content: None,
                 collapse_id: None,
                 tag: None,
+                thread_id: None,
+                icon: None,
+                target_content_id: None,
+                relevance_score: None,
+                filter_criteria: None,
+                content_available: None,
                 _content_available: None,
                 interruption_level: Some(InterruptionLevel::TimeSensitive),
             }
@@ -577,6 +661,12 @@ mod tests {
                 rich_content: None,
                 collapse_id: Some("collapse_id".to_string()),
                 tag: Some("tag".to_string()),
+                thread_id: None,
+                icon: None,
+                target_content_id: None,
+                relevance_score: None,
+                filter_criteria: None,
+                content_available: None,
                 _content_available: None,
                 interruption_level: None,
             }
@@ -593,6 +683,78 @@ mod tests {
         });
 
         assert_eq!(serialized, expected_json);
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_remaining_fields() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .thread_id("thread_id")
+            .icon("myicon")
+            .target_content_id("target_content_id")
+            .relevance_score(0.5)
+            .filter_criteria("filter_criteria")
+            .content_available(true)
+            .build()?;
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        let expected_json = json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "title": "Test",
+            "threadId": "thread_id",
+            "icon": "myicon",
+            "targetContentId": "target_content_id",
+            "relevanceScore": 0.5,
+            "filterCriteria": "filter_criteria",
+            "contentAvailable": true
+        });
+
+        assert_eq!(serialized, expected_json);
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_deserializes_legacy_content_available(
+    ) -> Result<(), serde_json::Error> {
+        let message: ExpoPushMessage = serde_json::from_value(json!({
+            "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+            "_contentAvailable": true
+        }))?;
+
+        assert_eq!(message._content_available, Some(true));
+        assert_eq!(message.content_available, None);
+
+        // Round-trips back under the legacy key rather than being silently upgraded.
+        assert_eq!(
+            serde_json::to_value(&message)?,
+            json!({
+                "to": ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"],
+                "_contentAvailable": true
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_expo_push_message_builder_with_critical_sound() -> Result<(), ValidationError> {
+        let message = ExpoPushMessage::builder(["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"])
+            .title("Test")
+            .sound(Sound::Critical(
+                CriticalSound::new()
+                    .critical(true)
+                    .name("bells.wav")
+                    .volume(1.0),
+            ))
+            .build()?;
+
+        let serialized =
+            serde_json::to_value(&message).map_err(|_| ValidationError::InvalidData)?;
+        assert_eq!(
+            serialized["sound"],
+            json!({ "critical": true, "name": "bells.wav", "volume": 1.0 })
+        );
         Ok(())
     }
 }
